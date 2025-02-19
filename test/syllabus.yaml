@@ -1,0 +1,60 @@
+name: Demo Course
+description: This is a demo course
+objectives:
+  - name: Objective 1
+    description: This is the first objective
+  - name: Objective 2
+    description: This is the second objective
+modules:
+  - name: Basic Python Syntax
+    description: This module covers the basics of Python syntax
+    workdir: module1
+    sourcedir: module1
+    lessons:
+      - name: Intro To Python
+        description: A brief overview of Python 
+        lesson: ./lessons/Introduction.md
+        
+      - name: Commands
+        description: Introduction to the Python Turtle
+        lesson: ./lessons/Commands.md
+
+      - name: Commands Exercise
+        description: Practice using Commands
+        lesson: ./lessons/Variables.md
+
+      - name: Turtle Tricks
+        description: More advanced Turtle commands
+        workdir: turtle_tricks
+        exercise: module1/turtle_tricks_1.py
+        lesson:  ./lessons/TurtleTricks.md
+
+  - name: Logic and Conditionals
+    description: How to make decisions in Python
+    workdir: module2
+    lessons:
+      - name: If Statements
+        description: How to use if statements in Python        
+        lessons:
+          - name: X
+            description: How to use if statements in Python
+            lesson: ./lessons/IfStatements.md
+          - name: Y
+            description: How to use if statements in Python
+            lesson: ./lessons/IfStatements.md
+          - name: Z
+            description: How to use if statements in Python
+            lesson: ./lessons/IfStatements.md
+
+
+      - name: If Statements Exercise
+        description: Practice using if statements
+        exercise: module2/if_statements_1.py
+
+      - name: While Loops
+        description: How to use while loops in Python
+        exercise: module2/if_statements_1.ipynb
+
+      - name: While Loops Exercise
+        description: Practice using while loops
+        lesson: ./lessons/WhileLoopsExercise.md
