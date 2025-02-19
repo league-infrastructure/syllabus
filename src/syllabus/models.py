@@ -8,10 +8,9 @@ def to_yaml(m, simplify=False):
             "exclude_unset": not simplify,
             "exclude_defaults":  not simplify,
             "exclude_none": not simplify,
+            'by_alias': True,
     }
-        
-    print("!!!!", simplify, d)
-        
+
     return yaml.dump(m.model_dump(**d), sort_keys=False) 
 
 class Course(BaseModel):

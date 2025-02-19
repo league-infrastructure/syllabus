@@ -103,8 +103,9 @@ cli.add_command(check)
 @click.command()
 @click.argument('module_dir', type=click.Path(exists=True))
 @click.option('-p', '--print', 'print_only', is_flag=True, help="Print the module rather than add to the syllabus.")
+@click.option('-ng', '--no-group', 'nogroup', is_flag=True, help="Group lessons with the same basename. ")
 @click.pass_context
-def import_module(ctx, module_dir, print_only):
+def import_module(ctx, module_dir, print_only, nogroup):
     """Import a module from the specified directory."""
     
     from syllabus.sync import read_module
@@ -116,7 +117,7 @@ def import_module(ctx, module_dir, print_only):
     
     # Add logic to import the module
     logger.info(f"Importing module from {module_dir}...")
-    module = read_module(module_path)
+    module = read_module(module_path, group=not nogroup)
     
     if print_only:
         print(module.to_yaml())

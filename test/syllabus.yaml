@@ -1,60 +1,51 @@
 name: Demo Course
 description: This is a demo course
 objectives:
-  - name: Objective 1
-    description: This is the first objective
-  - name: Objective 2
-    description: This is the second objective
+- name: Objective 1
+  description: This is the first objective
+- name: Objective 2
+  description: This is the second objective
 modules:
-  - name: Basic Python Syntax
-    description: This module covers the basics of Python syntax
-    workdir: module1
-    sourcedir: module1
+- name: Turtles
+  overview: Turtles/README.md
+  lessons:
+  - name: 01_Get_Started
+    exercise: Turtles/01_Get_Started.ipynb
+  - name: 02_Meet_Tina
+    exercise: Turtles/02_Meet_Tina.py
+  - name: 03_Check_In_Your_Code
+    exercise: Turtles/03_Check_In_Your_Code.ipynb
+  - name: Turtle_Tricks
     lessons:
-      - name: Intro To Python
-        description: A brief overview of Python 
-        lesson: ./lessons/Introduction.md
-        
-      - name: Commands
-        description: Introduction to the Python Turtle
-        lesson: ./lessons/Commands.md
-
-      - name: Commands Exercise
-        description: Practice using Commands
-        lesson: ./lessons/Variables.md
-
-      - name: Turtle Tricks
-        description: More advanced Turtle commands
-        workdir: turtle_tricks
-        exercise: module1/turtle_tricks_1.py
-        lesson:  ./lessons/TurtleTricks.md
-
-  - name: Logic and Conditionals
-    description: How to make decisions in Python
-    workdir: module2
+    - name: 04a_Turtle_Tricks
+      exercise: Turtles/04a_Turtle_Tricks.py
+    - name: 04b_Turtle_Tricks
+      exercise: Turtles/04b_Turtle_Tricks.py
+    - name: 04c_Turtle_Tricks
+      exercise: Turtles/04c_Turtle_Tricks.py
+  - name: 05a_Loops
+    exercise: Turtles/05a_Loops.ipynb
+  - name: Loop_with_Turtle
     lessons:
-      - name: If Statements
-        description: How to use if statements in Python        
-        lessons:
-          - name: X
-            description: How to use if statements in Python
-            lesson: ./lessons/IfStatements.md
-          - name: Y
-            description: How to use if statements in Python
-            lesson: ./lessons/IfStatements.md
-          - name: Z
-            description: How to use if statements in Python
-            lesson: ./lessons/IfStatements.md
-
-
-      - name: If Statements Exercise
-        description: Practice using if statements
-        exercise: module2/if_statements_1.py
-
-      - name: While Loops
-        description: How to use while loops in Python
-        exercise: module2/if_statements_1.ipynb
-
-      - name: While Loops Exercise
-        description: Practice using while loops
-        lesson: ./lessons/WhileLoopsExercise.md
+    - name: 05b_Loop_with_Turtle
+      exercise: Turtles/05b_Loop_with_Turtle.py
+    - name: 05c_Loop_with_Turtle
+      exercise: Turtles/05c_Loop_with_Turtle.py
+  - name: Variables_and_Functions
+    lessons:
+    - name: 06a_Variables_and_Functions
+      exercise: Turtles/06a_Variables_and_Functions.ipynb
+    - name: 06b_Variables_and_Functions
+      exercise: Turtles/06b_Variables_and_Functions.ipynb
+  - name: 07_Efficient_Turtle
+    exercise: Turtles/07_Efficient_Turtle.py
+  - name: More_Turtle_Programs
+    lessons:
+    - name: 08a_More_Turtle_Programs
+      exercise: Turtles/08a_More_Turtle_Programs.ipynb
+    - name: 08c_More_Turtle_Programs
+      exercise: Turtles/08c_More_Turtle_Programs.py
+    - name: 08d_More_Turtle_Programs
+      exercise: Turtles/08d_More_Turtle_Programs.py
+  - name: 08b_More_Turtle_programs
+    exercise: Turtles/08b_More_Turtle_programs.py
