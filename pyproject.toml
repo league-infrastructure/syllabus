@@ -1,5 +1,5 @@
 [project]
-name = "syllabus"
+name = "jtl-syllabus"
 version = "0.1.0"
 description = "Course management system"
 readme = "README.md"
@@ -12,6 +12,9 @@ dependencies = [
     "pydantic>=2.10.6",
     "pyyaml>=6.0.2",
 ]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/syllabus"]  # This keeps the import name as 'syllabus'
 
 [build-system]
 requires = ["hatchling"]
