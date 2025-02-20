@@ -64,6 +64,7 @@ class Lesson(BaseModel):
     exercise: Optional[str] = None
     exer_test: Optional[str] = None
     assessment: Optional[str] = None
+    display: Optional[bool] = False
     
 
 class LessonSet(BaseModel):

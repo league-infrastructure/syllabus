@@ -3,6 +3,7 @@ from pathlib import Path
 from syllabus.models import  Course
 from dataclasses import dataclass
 import yaml
+import os
 
 import logging
 
@@ -29,28 +30,40 @@ class Context:
     syllabus: Course = None
     workspace: Path = None
 
+@click.pass_context
+def syllabus(ctx):
+    
+    if ctx.obj.syllabus is not None:
+        return ctx.obj.syllabus
+    
+    if not ctx.obj.file.exists():
+        logger.error(f"Error: The file {ctx.obj.file} does not exist.")
+        exit(1)
+
+    ctx.obj.syllabus = Course.from_yaml(ctx.obj.file)
+
+    return ctx.obj.syllabus
+
 @click.group()
 @click.option('-v', '--verbose', count=True, help="Increase verbosity level.")
 @click.option('-e', '--exceptions', is_flag=True, help="Raise exceptions on errors.")
 @click.option('-f', '--file', type=click.Path(), help="Specify the syllabus file.", default=Path("syllabus.yaml"))
 @click.option('-w', '--workspace', type=click.Path(), help="User's working directory.", default=Path('./workspace'))
+@click.option('-d', '--dir', type=click.Path(), help="Set the working directory.", default=Path('.'))
 @click.pass_context
-def cli(ctx, verbose, exceptions, file, workspace):
+def cli(ctx, verbose, exceptions, file, workspace, dir):
     setup_logging(verbose)
     
     ctx.obj = Context()
     
-    file_path = Path(file)
-    if not file_path.exists():
-        logger.error(f"Error: Thecd ../ file {file} does not exist.")
-        exit(1)
-    else:
-        ctx.obj.file = file_path
-        
-    if not ctx.obj.file.exists():
-        logger.error(f"Error: The syllabus file {ctx.obj.file} does not exist.")
-        exit(1)
-
+    if dir:
+        if not Path(dir).exists():
+            logger.error(f"Error: The working directory {dir} does not exist.")
+            exit(1)
+        os.chdir(dir)
+    
+    ctx.obj.file = Path(file)
+    
     workspace = Path(workspace)
     if not workspace.exists():
         logger.error(f"Error: The workspace '{workspace}' does not exist.  )")
@@ -58,15 +71,12 @@ def cli(ctx, verbose, exceptions, file, workspace):
     else:
         ctx.obj.workspace = workspace
 
-    ctx.obj.syllabus = Course.from_yaml(ctx.obj.file)
-
-
 @click.command()
 @click.pass_context
 def inspect(ctx):
     """Inspect and report on the environment"""
     
-    print(ctx.obj.syllabus.to_yaml())
+    print(syllabus().to_yaml())
 
 cli.add_command(inspect)
 
@@ -122,7 +132,7 @@ def import_module(ctx, module_dir, print_only, nogroup):
     if print_only:
         print(module.to_yaml())
     else:
-        s = ctx.obj.syllabus
+        s = syllabus()
         s.modules.append(module)
         
         ctx.obj.file.write_text(s.to_yaml())
