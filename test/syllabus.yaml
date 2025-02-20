@@ -6,46 +6,79 @@ objectives:
 - name: Objective 2
   description: This is the second objective
 modules:
+- name: Loops
+  overview: Loops/README.md
+  lessons:
+  - name: Iteration
+    exercise: Loops/01_Iteration.ipynb
+    display: false
+  - name: Crazy Tina
+    lesson: Loops/02_Crazy_Tina.md
+    exercise: Loops/02_Crazy_Tina.py
+    display: true
+  - name: List Story
+    lesson: Loops/04b_List_Story.md
+    exercise: Loops/04b_List_Story.py
+    display: true
+  - name: Strings
+    exercise: Loops/05_Strings.ipynb
+    display: false
+  - name: Fizz Buzz Badgers
+    lesson: Loops/06_Fizz_Buzz_Badgers.md
+    exercise: Loops/06_Fizz_Buzz_Badgers.py
+    display: true
+  - name: For Loop Gauntlet
+    exercise: Loops/07_For_Loop_Gauntlet.ipynb
+    display: false
+  - name: FizzBuzz Gui Grid
+    exercise: Loops/09_FizzBuzz_Gui_Grid.py
+    display: true
 - name: Turtles
   overview: Turtles/README.md
   lessons:
-  - name: 01_Get_Started
+  - name: Get Started
     exercise: Turtles/01_Get_Started.ipynb
-  - name: 02_Meet_Tina
+    display: false
+  - name: Meet Tina
+    lesson: Turtles/02_Meet_Tina.md
     exercise: Turtles/02_Meet_Tina.py
-  - name: 03_Check_In_Your_Code
+    display: true
+  - name: Check In Your Code
     exercise: Turtles/03_Check_In_Your_Code.ipynb
-  - name: Turtle_Tricks
+    display: false
+  - name: Turtle Tricks
     lessons:
-    - name: 04a_Turtle_Tricks
+    - name: Turtle Tricks 1
       exercise: Turtles/04a_Turtle_Tricks.py
-    - name: 04b_Turtle_Tricks
+      display: true
+    - name: Turtle Tricks 2
       exercise: Turtles/04b_Turtle_Tricks.py
-    - name: 04c_Turtle_Tricks
+      display: true
+    - name: Turtle Tricks 3
       exercise: Turtles/04c_Turtle_Tricks.py
-  - name: 05a_Loops
-    exercise: Turtles/05a_Loops.ipynb
-  - name: Loop_with_Turtle
+      display: true
+  - name: Variables and Functions
     lessons:
-    - name: 05b_Loop_with_Turtle
-      exercise: Turtles/05b_Loop_with_Turtle.py
-    - name: 05c_Loop_with_Turtle
-      exercise: Turtles/05c_Loop_with_Turtle.py
-  - name: Variables_and_Functions
-    lessons:
-    - name: 06a_Variables_and_Functions
+    - name: Variables and Functions
       exercise: Turtles/06a_Variables_and_Functions.ipynb
-    - name: 06b_Variables_and_Functions
+      display: false
+    - name: Variables and Functions
       exercise: Turtles/06b_Variables_and_Functions.ipynb
-  - name: 07_Efficient_Turtle
+      display: false
+  - name: Efficient Turtle
     exercise: Turtles/07_Efficient_Turtle.py
-  - name: More_Turtle_Programs
+    display: true
+  - name: More Turtle Programs
     lessons:
-    - name: 08a_More_Turtle_Programs
+    - name: More Turtle Programs 1
       exercise: Turtles/08a_More_Turtle_Programs.ipynb
-    - name: 08c_More_Turtle_Programs
+      display: false
+    - name: More Turtle Programs 2
       exercise: Turtles/08c_More_Turtle_Programs.py
-    - name: 08d_More_Turtle_Programs
+      display: true
+    - name: More Turtle Programs 3
       exercise: Turtles/08d_More_Turtle_Programs.py
-  - name: 08b_More_Turtle_programs
+      display: true
+  - name: More Turtle programs
     exercise: Turtles/08b_More_Turtle_programs.py
+    display: true
