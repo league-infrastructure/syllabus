@@ -217,6 +217,18 @@ def renumber(ctx, lesson_dir, dryrun, increment):
 cli.add_command(renumber, name='renumber')
 
 
+@click.command()
+@click.argument('lesson_dir', type=click.Path(exists=True))
+@click.option('-d', '--dryrun', is_flag=True, help="Perform a dry run without renaming files.")
+
+@click.pass_context
+def regroup(ctx, lesson_dir, dryrun, increment):
+    """Import a module from the specified directory."""
+    regroup_lessons(lesson_dir=Path(lesson_dir), increment=increment, dryrun=dryrun) 
+    
+cli.add_command(regroup, name='regroup')
+
+
 def run():
     cli()
 

@@ -112,16 +112,20 @@ def renumber_lessons(lesson_dir: Path, increment=1, dryrun: bool = True):
     import math
     lesson_dir = Path(lesson_dir)
     
-    
-    
+
     
     def compile_changes(dirpath, all_names):
         
         changes = []
         
+        if len(all_names) == 0:
+            return changes
+        
+        
         all_names.sort()
             
-        max_n = len(all_names)*increment
+        max_n = max(len(all_names)*increment, 1)
+        
         digits = math.ceil(math.log10(max_n))
         digits = max(digits, 2)
             
@@ -135,15 +139,19 @@ def renumber_lessons(lesson_dir: Path, increment=1, dryrun: bool = True):
             if str(n) == str(new_name):
                 continue
             
-            depth = len(Path(dirpath/n).relative_to(lesson_dir).parts)
+            old_path = Path(dirpath, n)
+            assert old_path.exists(), f"File {old_path} does not exist"
             
-            changes.append((depth, Path(dirpath, n), Path(dirpath, new_name)))
+            depth = len(old_path.relative_to(lesson_dir).parts)
+            
+            changes.append((depth, old_path, Path(dirpath, new_name)))
         
         return changes
     
     changes = []
     
-    changes.extend(compile_changes(lesson_dir, [d for d in lesson_dir.iterdir() if match_rank(Path(d))] ))
+    changes.extend(compile_changes(lesson_dir, [d.relative_to(lesson_dir) for d in lesson_dir.iterdir() if match_rank(Path(d))] ))
+    
     
     for (dirpath, dirnames, filenames) in lesson_dir.walk():
  
