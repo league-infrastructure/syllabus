@@ -11,7 +11,7 @@ from pathlib import Path
 import click
 
 from syllabus.models import Course
-from syllabus.sync import read_module, sync_syllabus, renumber_lessons
+from syllabus.sync import read_module, sync_syllabus, renumber_lessons, regroup_lessons
 from syllabus import __version__  # Import the package version
 
 
