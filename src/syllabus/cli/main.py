@@ -11,7 +11,7 @@ from pathlib import Path
 import click
 
 from syllabus.models import Course
-from syllabus.sync import read_module
+from syllabus.sync import read_module, sync_syllabus, renumber_lessons
 from syllabus import __version__  # Import the package version
 
 
@@ -126,13 +126,7 @@ def build():
 cli.add_command(build)
 
 
-@click.command()
-def renumber():
-    """Renumber the syllabus sections."""
-    pass
 
-
-cli.add_command(renumber)
 
 
 @click.command()
@@ -197,6 +191,30 @@ def import_module(ctx, module_dir, print_only, nogroup, recursive=False):
 
 
 cli.add_command(import_module, name='import')
+
+@click.command()
+@click.argument('lesson_dir', type=click.Path(exists=True))
+@click.pass_context
+def sync(ctx, lesson_dir):
+    """Import a module from the specified directory."""
+    sync_syllabus(
+        lesson_dir=Path(lesson_dir),
+        syllabus=syllabus()
+    )
+    
+cli.add_command(sync, name='sync')
+
+
+@click.command()
+@click.argument('lesson_dir', type=click.Path(exists=True))
+@click.option('-d', '--dryrun', is_flag=True, help="Perform a dry run without renaming files.")
+@click.option('-i', '--increment', type=int, default=1, help="Increment the lesson numbers by this amount.")
+@click.pass_context
+def renumber(ctx, lesson_dir, dryrun, increment):
+    """Import a module from the specified directory."""
+    renumber_lessons(lesson_dir=Path(lesson_dir), increment=increment, dryrun=dryrun) 
+    
+cli.add_command(renumber, name='renumber')
 
 
 def run():

@@ -1,11 +1,176 @@
 """
 Does something ... 
 """
+# pylint: disable=C0115  # missing-class-docstring
 
 import re
 from pathlib import Path
 
-from syllabus.models import Lesson, LessonSet, Module
+from syllabus.models import Lesson, LessonSet, Module, Course
+
+assignment_exts = ['.py', '.ipynb', '.md', '.class','.java', '.cpp', '.c', '.h']
+
+name_p = re.compile(r'^(\d+[A-Za-z]*)_([^\.]+)$')
+rank_p = re.compile(r'^(\d+[A-Za-z]*)_')
+
+
+def match_rank_name(f: Path) -> str:
+
+    match = name_p.match(f.stem)
+    if match:
+        rank, base = match.groups()
+        return rank, base
+    else:
+        return None, None
+
+def match_rank(f: Path) -> str:
+    match = rank_p.match(f.stem)
+    if match:
+        rank = match.group(1)
+        return rank
+    else:
+        return None
+
+def replace_rank(f: Path, rank: str) -> Path:
+    """Replace the rank in the filename with the new rank."""
+    old_rank = match_rank(f)
+    
+    if not old_rank:
+        return f
+    
+    return f.with_stem(f.stem.replace(old_rank, rank, 1))
+
+
+class LessonEntry:
+    
+    def __init__(self, root: Path,  path:Path):
+        
+        self.root = root
+        self.path = path
+        
+    @property
+    def rpath(self):
+        return self.path.relative_to(self.root)
+        
+    @property
+    def stem(self):
+        return self.path.stem
+    
+    @property
+    def ext(self):
+        return self.path.suffix
+        
+    @property
+    def group(self):
+        # For the group, take each part of the path and remove the rank, 
+        # then on the last part, remove the extension
+        
+        parts = [ Path(p).stem for p in self.rpath.parts]
+        return '/'.join(parts)
+    
+    @property
+    def is_ranked_path(self, sf: Path) -> bool:
+        """Check that the path specifies ranked path elements; 
+        all path elements start with a number and an underscore.
+        """
+        
+        return all(match_rank_name(Path(p)) for p in self.rpath.parts)
+        
+    @property
+    def rank(self):
+        if self.path.stem:
+            match = rank_p.match(self.path.stem)
+            if match:
+                return match.group(1)
+        return None
+
+
+def clean_filename(filename: str) -> str:
+    """Remove leading numbers and letters up to the first "_" or " "."""
+    return re.sub(r'^[\d\w]*?[_ ]', '', filename).replace('_', ' ').replace('-', ' ')
+
+
+def sync_syllabus(lesson_dir: Path, syllabus: Course) -> None:
+    
+    lesson_dir = Path(lesson_dir)
+    
+    for (dirpath, dirnames, filenames) in lesson_dir.walk():
+ 
+        if not match_rank(Path(dirpath)):
+            continue # No rank, so skip this directory
+        
+        no_ranks = not any(bool(match_rank(Path(f))) for f in filenames)
+        
+        print(no_ranks, dirpath)
+            
+        
+        # Check if the directory is a module
+
+
+def renumber_lessons(lesson_dir: Path, increment=1, dryrun: bool = True):
+    
+    import math
+    lesson_dir = Path(lesson_dir)
+    
+    
+    
+    
+    def compile_changes(dirpath, all_names):
+        
+        changes = []
+        
+        all_names.sort()
+            
+        max_n = len(all_names)*increment
+        digits = math.ceil(math.log10(max_n))
+        digits = max(digits, 2)
+            
+      
+        for i, n in enumerate(all_names,1):
+            
+            i *= increment
+            
+            new_name = replace_rank(Path(n), str(i).zfill(digits))
+            
+            if str(n) == str(new_name):
+                continue
+            
+            depth = len(Path(dirpath/n).relative_to(lesson_dir).parts)
+            
+            changes.append((depth, Path(dirpath, n), Path(dirpath, new_name)))
+        
+        return changes
+    
+    changes = []
+    
+    changes.extend(compile_changes(lesson_dir, [d for d in lesson_dir.iterdir() if match_rank(Path(d))] ))
+    
+    for (dirpath, dirnames, filenames) in lesson_dir.walk():
+ 
+        if not match_rank(Path(dirpath)):
+            continue # No rank, so skip this directory
+        
+        all_names =  [f for f in filenames if match_rank(Path(f))] +  [d for d in dirnames if match_rank(Path(d))] 
+        
+        changes.extend(compile_changes(dirpath, all_names))
+        
+            
+        
+    for  depth, old_name, new_name in reversed(sorted(changes, key=lambda x: x[0])):
+        if dryrun:
+            print(f"{depth} Rename {old_name.relative_to(lesson_dir)} to {new_name.relative_to(lesson_dir)}")
+        else:
+            try:
+                old_name.rename(new_name)
+            except Exception as e:
+                print(f"Error renaming {old_name.relative_to(lesson_dir)} to {new_name.relative_to(lesson_dir)}: {e}")
+                
+    
+        
+        
+        
+    
+    
 
 
 def read_module(path: Path, group: bool = False) -> Module:
@@ -16,9 +181,6 @@ def read_module(path: Path, group: bool = False) -> Module:
 
     overview = None
 
-    def clean_filename(filename: str) -> str:
-        """Remove leading numbers and letters up to the first "_" or " "."""
-        return re.sub(r'^[\d\w]*?[_ ]', '', filename).replace('_', ' ').replace('-', ' ')
 
     def mk_lesson(e):
 
