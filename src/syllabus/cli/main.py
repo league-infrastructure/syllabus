@@ -1,16 +1,25 @@
-import click
-from pathlib import Path
-from syllabus.models import  Course
-from dataclasses import dataclass
-import yaml
-import os
+"""Main command line interface for the syllabus package."""
+
+# pylint: disable=C0116, C0115, W0613, E1120, W0107, W0622
 
 import logging
+import os
+import sys
+from dataclasses import dataclass
+from pathlib import Path
 
-logger = logging.getLogger(__name__)    
+import click
+
+from syllabus.models import Course
+from syllabus.sync import read_module
+from syllabus import __version__  # Import the package version
+
+
+logger = logging.getLogger(__name__)
+
 
 def setup_logging(verbose):
-    
+
     if verbose == 1:
         log_level = logging.INFO
     elif verbose > 1:
@@ -18,9 +27,10 @@ def setup_logging(verbose):
     else:
         log_level = logging.ERROR
 
-
-    logging.basicConfig(level=logging.ERROR, format='%(levelname)s: %(message)s')   
+    logging.basicConfig(level=logging.ERROR,
+                        format='%(levelname)s: %(message)s')
     logger.setLevel(log_level)
+
 
 @dataclass
 class Context:
@@ -30,19 +40,21 @@ class Context:
     syllabus: Course = None
     workspace: Path = None
 
+
 @click.pass_context
 def syllabus(ctx):
-    
+
     if ctx.obj.syllabus is not None:
         return ctx.obj.syllabus
-    
+
     if not ctx.obj.file.exists():
-        logger.error(f"Error: The file {ctx.obj.file} does not exist.")
+        logger.error("Error: The file %s does not exist.", ctx.obj.file)
         exit(1)
 
     ctx.obj.syllabus = Course.from_yaml(ctx.obj.file)
 
     return ctx.obj.syllabus
+
 
 @click.group()
 @click.option('-v', '--verbose', count=True, help="Increase verbosity level.")
@@ -53,46 +65,75 @@ def syllabus(ctx):
 @click.pass_context
 def cli(ctx, verbose, exceptions, file, workspace, dir):
     setup_logging(verbose)
-    
+
     ctx.obj = Context()
-    
+
     if dir:
         if not Path(dir).exists():
-            logger.error(f"Error: The working directory {dir} does not exist.")
+            logger.error(
+                "Error: The working directory %s does not exist.", dir)
             exit(1)
         os.chdir(dir)
-    
+
     ctx.obj.file = Path(file)
-    
+
     workspace = Path(workspace)
-    if not workspace.exists():
-        logger.error(f"Error: The workspace '{workspace}' does not exist.  )")
-        exit(1)
-    else:
-        ctx.obj.workspace = workspace
+    ctx.obj.workspace = workspace
+
+
+@click.command()
+def version():
+    """Show the version and exit."""
+    print(f"Syllabus CLI version {__version__}")
+
+
+cli.add_command(version)
+
+
+@click.command()
+@click.option('-n', '--name', type=str, required=True, help="Name of the course.")
+@click.option('-d', '--description', type=str, help="Description of the description.")
+@click.pass_context
+def new(ctx, name, description):
+    """Create a new syllabus file."""
+
+    new_syllabus = Course(name=name, description=description)
+    ctx.obj.file.write_text(new_syllabus.to_yaml())
+
+    print(f"Created new syllabus file at {ctx.obj.file}")
+
+
+cli.add_command(new)
+
 
 @click.command()
 @click.pass_context
 def inspect(ctx):
     """Inspect and report on the environment"""
-    
+
     print(syllabus().to_yaml())
 
+
 cli.add_command(inspect)
+
 
 @click.command()
 def build():
     """Build the syllabus."""
     pass
 
+
 cli.add_command(build)
+
 
 @click.command()
 def renumber():
     """Renumber the syllabus sections."""
     pass
 
+
 cli.add_command(renumber)
+
 
 @click.command()
 @click.option('-e', '--exists', is_flag=True, help="Check that referenced files exist.")
@@ -107,6 +148,7 @@ def check(exists, create):
         logger.info("Creating files that are referenced but don't exist...")
         # Add logic to create files if they don't exist
 
+
 cli.add_command(check)
 
 
@@ -114,35 +156,52 @@ cli.add_command(check)
 @click.argument('module_dir', type=click.Path(exists=True))
 @click.option('-p', '--print', 'print_only', is_flag=True, help="Print the module rather than add to the syllabus.")
 @click.option('-ng', '--no-group', 'nogroup', is_flag=True, help="Group lessons with the same basename. ")
+@click.option('-r', '--recursive', is_flag=True, help="Import all modules in the directory recursively.")
 @click.pass_context
-def import_module(ctx, module_dir, print_only, nogroup):
+def import_module(ctx, module_dir, print_only, nogroup, recursive=False):
     """Import a module from the specified directory."""
-    
-    from syllabus.sync import read_module
-    
+
     module_path = Path(module_dir)
+
+    if recursive:
+        for subdir in sorted(module_path.iterdir()):
+            if subdir.stem.lower() == 'readme':
+                continue
+            if not subdir.is_dir():
+                continue
+            if subdir.is_dir():
+                ctx.invoke(import_module, module_dir=subdir,
+                           print_only=print_only, nogroup=nogroup, recursive=False)
+        return
+
     if not module_path.is_dir():
-        logger.info(f"Error: The directory {module_dir} does not exist or is not a directory.")
+        logger.info(
+            "Error: The directory %s does not exist or is not a directory.", module_dir)
         exit(1)
-    
+
     # Add logic to import the module
-    logger.info(f"Importing module from {module_dir}...")
+    logger.info("Importing module from %s...", module_dir)
     module = read_module(module_path, group=not nogroup)
-    
+
     if print_only:
         print(module.to_yaml())
     else:
         s = syllabus()
+        if not s.modules:
+            s.modules = []
         s.modules.append(module)
-        
+
         ctx.obj.file.write_text(s.to_yaml())
-        
+
         print(f"Updated syllabus to {ctx.obj.file}")
+
 
 cli.add_command(import_module, name='import')
 
+
 def run():
     cli()
+
 
 if __name__ == "__main__":
     run()

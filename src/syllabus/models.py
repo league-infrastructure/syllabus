@@ -19,7 +19,7 @@ class Course(BaseModel):
     objectives: Optional[List["Objective"]] = None
     workdir: Optional[str] = None
     sourcedir: Optional[str] = None
-    modules: List["Module"]
+    modules: List["Module"] = []
     
     class Config:
         arbitrary_types_allowed = True
