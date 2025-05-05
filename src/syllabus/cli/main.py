@@ -222,9 +222,9 @@ cli.add_command(renumber, name='renumber')
 @click.option('-d', '--dryrun', is_flag=True, help="Perform a dry run without renaming files.")
 
 @click.pass_context
-def regroup(ctx, lesson_dir, dryrun, increment):
+def regroup(ctx, lesson_dir, dryrun):
     """Import a module from the specified directory."""
-    regroup_lessons(lesson_dir=Path(lesson_dir), increment=increment, dryrun=dryrun) 
+    regroup_lessons(lesson_dir=Path(lesson_dir), dryrun=dryrun) 
     
 cli.add_command(regroup, name='regroup')
 

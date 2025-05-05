@@ -106,6 +106,45 @@ def sync_syllabus(lesson_dir: Path, syllabus: Course) -> None:
         
         # Check if the directory is a module
 
+def regroup_lessons(lesson_dir: Path, dryrun: bool = True):
+    
+    from collections import defaultdict
+    
+    lesson_dir = Path(lesson_dir)
+    
+    
+    for (dirpath, dirnames, filenames) in lesson_dir.walk():
+ 
+        if not match_rank(Path(dirpath)):
+            continue # No rank, so skip this directory
+        
+        grouped = defaultdict(list)
+        
+        for f in filenames:
+            rank, base = match_rank_name(Path(f))
+            if rank:
+                grouped[ f"{rank}_{base}" ].append(f)
+            
+        grouped = {k: v for k, v in grouped.items() if len(v) > 1}
+            
+        for k, v in grouped.items():
+            print(f"Group {k} -> {v}")
+            
+            if dryrun:
+                continue
+            
+            # Create a new directory for the group
+            new_dir = Path(dirpath, k)
+            new_dir.mkdir(parents=True, exist_ok=True)
+            
+            for f in v:
+                old_path = Path(dirpath, f)
+                new_path = Path(new_dir, f)
+                
+                print(f"Move {old_path.relative_to(lesson_dir)} to {new_path.relative_to(lesson_dir)}")
+                
+                old_path.rename(new_path)
+
 
 def renumber_lessons(lesson_dir: Path, increment=1, dryrun: bool = True):
     
