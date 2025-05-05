@@ -43,49 +43,6 @@ def replace_rank(f: Path, rank: str) -> Path:
     return f.with_stem(f.stem.replace(old_rank, rank, 1))
 
 
-class LessonEntry:
-    
-    def __init__(self, root: Path,  path:Path):
-        
-        self.root = root
-        self.path = path
-        
-    @property
-    def rpath(self):
-        return self.path.relative_to(self.root)
-        
-    @property
-    def stem(self):
-        return self.path.stem
-    
-    @property
-    def ext(self):
-        return self.path.suffix
-        
-    @property
-    def group(self):
-        # For the group, take each part of the path and remove the rank, 
-        # then on the last part, remove the extension
-        
-        parts = [ Path(p).stem for p in self.rpath.parts]
-        return '/'.join(parts)
-    
-    @property
-    def is_ranked_path(self, sf: Path) -> bool:
-        """Check that the path specifies ranked path elements; 
-        all path elements start with a number and an underscore.
-        """
-        
-        return all(match_rank_name(Path(p)) for p in self.rpath.parts)
-        
-    @property
-    def rank(self):
-        if self.path.stem:
-            match = rank_p.match(self.path.stem)
-            if match:
-                return match.group(1)
-        return None
-
 
 def clean_filename(filename: str) -> str:
     """Remove leading numbers and letters up to the first "_" or " "."""
@@ -259,10 +216,6 @@ def check_structure(lesson_dir: Path):
     return True       
         
         
-    
-    
-
-
 def read_module(path: Path, group: bool = False) -> Module:
     """Read the files in a module directory and create a list of
     Lesson objects.
