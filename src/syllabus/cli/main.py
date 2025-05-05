@@ -105,29 +105,12 @@ def new(ctx, name, description):
 cli.add_command(new)
 
 
-@click.command()
-@click.pass_context
-def inspect(ctx):
-    """Inspect and report on the environment"""
-
-    print(syllabus().to_yaml())
-
-
-cli.add_command(inspect)
-
-
-@click.command()
-def build():
-    """Build the syllabus."""
-    pass
-
-
-cli.add_command(build)
 
 @click.command()
 @click.argument('lesson_dir', type=click.Path(exists=True))
 @click.pass_context
 def check(ctx, lesson_dir):
+    """Validate the structure of the lesson directory."""
     
 
     try:

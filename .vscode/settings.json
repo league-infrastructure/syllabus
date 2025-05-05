@@ -1,0 +1,8 @@
+{
+
+    // Tell YAML intelisense not to validate the justfile
+    "files.associations": {
+        "justfile": "just"
+    }
+
+}

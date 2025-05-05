@@ -5,3 +5,4 @@ max-line-length=1120
 disable=C0115,  # missing-class-docstring
         C0116,  # missing-function-docstring
         C0303,  # trailing-whitespace
+        E1101 # no-member, for thigs like turtle.exitonclick, which do infact exists
