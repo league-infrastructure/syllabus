@@ -5,6 +5,8 @@ Does something ...
 
 import re
 from pathlib import Path
+from collections import defaultdict
+import math
 
 from syllabus.models import Lesson, LessonSet, Module, Course
 
@@ -107,8 +109,10 @@ def sync_syllabus(lesson_dir: Path, syllabus: Course) -> None:
         # Check if the directory is a module
 
 def regroup_lessons(lesson_dir: Path, dryrun: bool = True):
+
+    from syllabus.cli.main import logger
     
-    from collections import defaultdict
+    check_structure(lesson_dir)
     
     lesson_dir = Path(lesson_dir)
     
@@ -128,11 +132,11 @@ def regroup_lessons(lesson_dir: Path, dryrun: bool = True):
         grouped = {k: v for k, v in grouped.items() if len(v) > 1}
             
         for k, v in grouped.items():
-            print(f"Group {k} -> {v}")
+            logger.info("Group %s -> %s", k, v)
             
             # Create a new directory for the group
             new_dir = Path(dirpath, k)
-            
+          
             if not dryrun:
                 new_dir.mkdir(parents=True, exist_ok=True)
             
@@ -140,7 +144,14 @@ def regroup_lessons(lesson_dir: Path, dryrun: bool = True):
                 old_path = Path(dirpath, f)
                 new_path = Path(new_dir, str(replace_rank(Path(f), '')).strip('_'))
                 
-                print(f"Move {old_path.relative_to(lesson_dir)} to {new_path.relative_to(lesson_dir)}")
+                # If the new path is a .md file, move it to README.md
+                if new_path.suffix == '.md':
+                    new_path = new_path.with_name('README.md')
+                
+                
+                logger.info("Move %s to %s", old_path.relative_to(lesson_dir), new_path.relative_to(lesson_dir))
+                
+                
                 
                 if not dryrun:
                     old_path.rename(new_path)
@@ -148,12 +159,14 @@ def regroup_lessons(lesson_dir: Path, dryrun: bool = True):
 
 def renumber_lessons(lesson_dir: Path, increment=1, dryrun: bool = True):
     
-    import math
+    
+    from syllabus.cli.main import logger
     lesson_dir = Path(lesson_dir)
     
-
+    check_structure(lesson_dir)
     
     def compile_changes(dirpath, all_names):
+        
         
         changes = []
         
@@ -197,23 +210,53 @@ def renumber_lessons(lesson_dir: Path, increment=1, dryrun: bool = True):
         if not match_rank(Path(dirpath)):
             continue # No rank, so skip this directory
         
-        all_names =  [f for f in filenames if match_rank(Path(f))] +  [d for d in dirnames if match_rank(Path(d))] 
+        all_names =  [f for f in filenames if match_rank(Path(f))] +  [d for d in dirnames if match_rank(Path(d)) ] 
         
         changes.extend(compile_changes(dirpath, all_names))
         
-            
-        
-    for  depth, old_name, new_name in reversed(sorted(changes, key=lambda x: x[0])):
-        if dryrun:
-            print(f"{depth} Rename {old_name.relative_to(lesson_dir)} to {new_name.relative_to(lesson_dir)}")
-        else:
-            try:
-                old_name.rename(new_name)
-            except Exception as e:
-                print(f"Error renaming {old_name.relative_to(lesson_dir)} to {new_name.relative_to(lesson_dir)}: {e}")
-                
+    
+    # Delete all empty directories
+    for dirpath, dirnames, filenames in lesson_dir.walk():
+        for dirname in dirnames:
+            dir_to_check = Path(dirpath, dirname)
+            if not any(dir_to_check.iterdir()):  # Check if directory is empty
+                logger.info("Deleting empty directory: %s", dir_to_check.relative_to(lesson_dir))
+                if not dryrun:
+                    dir_to_check.rmdir()
     
         
+    for  depth, old_name, new_name in reversed(sorted(changes, key=lambda x: x[0])):
+        logger.info("%d Rename %s to %s", depth, old_name.relative_to(lesson_dir), new_name.relative_to(lesson_dir))
+        if not dryrun:
+            try:
+                old_name.rename(new_name)
+            except OSError as e:
+                logger.info("Error renaming %s to %s: %s", old_name.relative_to(lesson_dir), new_name.relative_to(lesson_dir), e)
+                
+def check_structure(lesson_dir: Path):
+    """Check the structure of the lesson directory and return a list of
+    LessonEntry objects.
+
+    """
+    lesson_dir = Path(lesson_dir)
+
+    if not lesson_dir.is_dir():
+        raise ValueError(f"{lesson_dir} is not a directory")
+
+
+    # The top level of the lessons directory must contain only modules, 
+    # which means (1) There are no files except a README.md, (2) all of the
+    # directories have a rank. 
+
+    for p in lesson_dir.iterdir():
+        if p.stem.lower() == 'readme':
+            continue
+        if not p.is_dir() and p.name != 'README.md':
+            raise ValueError(f"{lesson_dir} contains files other than directories: {p}")
+        if not match_rank(p):
+            raise ValueError(f"{lesson_dir} contains directories without ranks: {p}")
+
+    return True       
         
         
     

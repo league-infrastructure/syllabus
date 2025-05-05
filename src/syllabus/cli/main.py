@@ -4,14 +4,13 @@
 
 import logging
 import os
-import sys
 from dataclasses import dataclass
 from pathlib import Path
 
 import click
 
 from syllabus.models import Course
-from syllabus.sync import read_module, sync_syllabus, renumber_lessons, regroup_lessons
+from syllabus.sync import read_module, sync_syllabus, renumber_lessons, regroup_lessons, check_structure
 from syllabus import __version__  # Import the package version
 
 
@@ -125,22 +124,18 @@ def build():
 
 cli.add_command(build)
 
-
-
-
-
 @click.command()
-@click.option('-e', '--exists', is_flag=True, help="Check that referenced files exist.")
-@click.option('-c', '--create', is_flag=True, help="Create files that are referenced but don't exist.")
-def check(exists, create):
-    """Check the syllabus for errors."""
-    if exists:
-        logger.info("Checking that referenced files exist...")
-        # Add logic to check file existence
+@click.argument('lesson_dir', type=click.Path(exists=True))
+@click.pass_context
+def check(ctx, lesson_dir):
+    
 
-    if create:
-        logger.info("Creating files that are referenced but don't exist...")
-        # Add logic to create files if they don't exist
+    try:
+        check_structure(Path(lesson_dir))
+    except Exception as e:
+        logger.error("Error: %s", e)
+        exit(1)
+        
 
 
 cli.add_command(check)
@@ -192,6 +187,7 @@ def import_module(ctx, module_dir, print_only, nogroup, recursive=False):
 
 cli.add_command(import_module, name='import')
 
+
 @click.command()
 @click.argument('lesson_dir', type=click.Path(exists=True))
 @click.pass_context
@@ -199,9 +195,8 @@ def sync(ctx, lesson_dir):
     """Import a module from the specified directory."""
     sync_syllabus(
         lesson_dir=Path(lesson_dir),
-        syllabus=syllabus()
-    )
-    
+        syllabus=syllabus())
+
 cli.add_command(sync, name='sync')
 
 
@@ -212,20 +207,22 @@ cli.add_command(sync, name='sync')
 @click.pass_context
 def renumber(ctx, lesson_dir, dryrun, increment):
     """Import a module from the specified directory."""
-    renumber_lessons(lesson_dir=Path(lesson_dir), increment=increment, dryrun=dryrun) 
-    
+    renumber_lessons(lesson_dir=Path(lesson_dir),
+                     increment=increment, dryrun=dryrun)
+
+
 cli.add_command(renumber, name='renumber')
 
 
 @click.command()
 @click.argument('lesson_dir', type=click.Path(exists=True))
 @click.option('-d', '--dryrun', is_flag=True, help="Perform a dry run without renaming files.")
-
 @click.pass_context
 def regroup(ctx, lesson_dir, dryrun):
     """Import a module from the specified directory."""
-    regroup_lessons(lesson_dir=Path(lesson_dir), dryrun=dryrun) 
-    
+    regroup_lessons(lesson_dir=Path(lesson_dir), dryrun=dryrun)
+
+
 cli.add_command(regroup, name='regroup')
 
 

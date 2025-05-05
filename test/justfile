@@ -1,0 +1,11 @@
+# Syllabus testing targets
+
+# Default target that runs the test1 target
+default: test1
+
+test1:
+    @echo "Running test1 target..."
+    rm -rf lessons
+    cp -r lessons-source lessons
+    syl -v -f syllabus.yaml regroup lessons 
+    syl -v -f syllabus.yaml renumber  lessons -i 100 
