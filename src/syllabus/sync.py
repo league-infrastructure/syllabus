@@ -130,20 +130,20 @@ def regroup_lessons(lesson_dir: Path, dryrun: bool = True):
         for k, v in grouped.items():
             print(f"Group {k} -> {v}")
             
-            if dryrun:
-                continue
-            
             # Create a new directory for the group
             new_dir = Path(dirpath, k)
-            new_dir.mkdir(parents=True, exist_ok=True)
+            
+            if not dryrun:
+                new_dir.mkdir(parents=True, exist_ok=True)
             
             for f in v:
                 old_path = Path(dirpath, f)
-                new_path = Path(new_dir, f)
+                new_path = Path(new_dir, str(replace_rank(Path(f), '')).strip('_'))
                 
                 print(f"Move {old_path.relative_to(lesson_dir)} to {new_path.relative_to(lesson_dir)}")
                 
-                old_path.rename(new_path)
+                if not dryrun:
+                    old_path.rename(new_path)
 
 
 def renumber_lessons(lesson_dir: Path, increment=1, dryrun: bool = True):
