@@ -1,0 +1,14 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Compile Lessons",
+            "type": "python",
+            "request": "launch",
+            "module": "syllabus.cli.main",
+            "args": ["-e", "-vv", "compile", "test/lessons"],
+            "justMyCode": true,
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}

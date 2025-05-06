@@ -9,61 +9,88 @@ from collections import defaultdict
 import math
 
 from syllabus.models import Lesson, LessonSet, Module, Course
+from syllabus.util import clean_filename, match_rank, match_rank_name, replace_rank, extract_rank_string, extract_metadata_markdown
 
-assignment_exts = ['.py', '.ipynb', '.md', '.class','.java', '.cpp', '.c', '.h']
-
-name_p = re.compile(r'^(\d+[A-Za-z]*)_([^\.]+)$')
-rank_p = re.compile(r'^(\d+[A-Za-z]*)_')
-
-
-def match_rank_name(f: Path) -> str:
-
-    match = name_p.match(f.stem)
-    if match:
-        rank, base = match.groups()
-        return rank, base
-    else:
-        return None, None
-
-def match_rank(f: Path) -> str:
-    match = rank_p.match(f.stem)
-    if match:
-        rank = match.group(1)
-        return rank
-    else:
-        return None
-
-def replace_rank(f: Path, rank: str) -> Path:
-    """Replace the rank in the filename with the new rank."""
-    old_rank = match_rank(f)
+def is_lesson(f: Path) -> bool:
+    """Check if the file is a lesson. It is a lesson if it has a rank and
+    an extension of (.ipynb, .md, or .py), or if it is a directory with a rank
+    and no file in the directory has a rank. """
     
-    if not old_rank:
-        return f
+    if f.is_dir():
+        return match_rank(f) and not any(match_rank(Path(d)) for d in f.iterdir())
     
-    return f.with_stem(f.stem.replace(old_rank, rank, 1))
+    if f.suffix in ('.ipynb', '.md', '.py'):
+        return match_rank(f)
+    
+    return False
 
 
+def get_readme_metadata(lesson_dir: Path) -> dict:
+    """Get the metadata from the README.md file in the lesson directory."""
+    readme_path = Path(lesson_dir, 'README.md')
+    if readme_path.exists():
+        metadata = extract_metadata_markdown(readme_path)
+        return metadata
+    return {}
 
-def clean_filename(filename: str) -> str:
-    """Remove leading numbers and letters up to the first "_" or " "."""
-    return re.sub(r'^[\d\w]*?[_ ]', '', filename).replace('_', ' ').replace('-', ' ')
-
-
-def sync_syllabus(lesson_dir: Path, syllabus: Course) -> None:
+def compile_syllabus(lesson_dir: Path) -> None:
     
     lesson_dir = Path(lesson_dir)
     
+    course = Course(name='Foobar')
+    course.description = get_readme_metadata(lesson_dir).get('description')
+    
+    omap = {}
+    last_container = None
+     
     for (dirpath, dirnames, filenames) in lesson_dir.walk():
  
         if not match_rank(Path(dirpath)):
             continue # No rank, so skip this directory
+
+
+        dprtld = Path(dirpath).relative_to(lesson_dir)
         
-        no_ranks = not any(bool(match_rank(Path(f))) for f in filenames)
+        ranks = extract_rank_string(Path(dirpath))
+        pparts =ranks.split('/')
         
-        print(no_ranks, dirpath)
-            
+
+        if is_lesson(Path(dirpath)):
+            l =  Lesson.new_lesson(lesson_dir, dprtld) 
+            last_container.lessons.append(l)
+        else:
+            if len(pparts) == 1:
+                module = Module(name=clean_filename(dirpath.stem), path=ranks)  
+                module.description = get_readme_metadata(dirpath).get('description')
+                course.modules.append(module)
+                omap[ranks] = module
+                last_container = module
+                
+                
+            else:
+                lesson_set = LessonSet(name=clean_filename(dirpath.stem), path=ranks)
+                
+                lesson_set.description = get_readme_metadata(dirpath).get('description')
+                        
+                module = omap['/'.join(pparts[:-1])]
+                module.lessons.append(lesson_set)
+                omap[ranks] = lesson_set
+                last_container = lesson_set
         
-        # Check if the directory is a module
+        
+        for f in sorted(filenames):
+            if is_lesson(Path(f)):
+                l = Lesson.new_lesson(lesson_dir, Path(dirpath, f).relative_to(lesson_dir))
+                last_container.lessons.append(l)
+        
+
+    # Because we added the lessons that are single files independently from lessons
+    # that are directories, they won't have been added in srted order. So we need to sort them now.
+    
+    course.sort()
+    
+        
+    print(course.to_json())
 
 def regroup_lessons(lesson_dir: Path, dryrun: bool = True):
 

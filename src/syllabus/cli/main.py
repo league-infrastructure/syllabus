@@ -10,7 +10,7 @@ from pathlib import Path
 import click
 
 from syllabus.models import Course
-from syllabus.sync import read_module, sync_syllabus, renumber_lessons, regroup_lessons, check_structure
+from syllabus.sync import read_module, compile_syllabus, renumber_lessons, regroup_lessons, check_structure
 from syllabus import __version__  # Import the package version
 
 
@@ -173,14 +173,31 @@ cli.add_command(import_module, name='import')
 
 @click.command()
 @click.argument('lesson_dir', type=click.Path(exists=True))
+@click.option('-g', '--regroup', is_flag=True, help="Regroup lessons with the same basename.")
+@click.option('-n', '--renumber', is_flag=True, help="Renumber lessons in the directory.")
+@click.option('-i', '--increment', type=int, default=1, help="Increment the lesson numbers by this amount.")
 @click.pass_context
-def sync(ctx, lesson_dir):
-    """Import a module from the specified directory."""
-    sync_syllabus(
+def compile(ctx, lesson_dir, regroup, renumber, increment):
+    """Read the lessons and compile a syllabus"""
+    
+    if regroup:
+        regroup_lessons(
+            lesson_dir=Path(lesson_dir),
+            dryrun=False,
+        )
+    
+    if renumber:
+        renumber_lessons(
+            lesson_dir=Path(lesson_dir),
+            increment=increment,
+            dryrun=False,
+        )
+    
+    compile_syllabus(
         lesson_dir=Path(lesson_dir),
-        syllabus=syllabus())
+        )
 
-cli.add_command(sync, name='sync')
+cli.add_command(compile, name='compile')
 
 
 @click.command()

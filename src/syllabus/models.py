@@ -4,6 +4,10 @@ from typing import List, Optional
 import yaml
 from pydantic import BaseModel
 import json
+from pathlib import Path
+import re
+
+from syllabus.util import clean_filename, display_p, extract_rank_string
 
 def to_yaml(m, simplify=False):
     """
@@ -26,8 +30,6 @@ def to_yaml(m, simplify=False):
     return yaml.dump(m.model_dump(**d), sort_keys=False)
 
 
-
-
 class Lesson(BaseModel):
     """
     Represents an individual lesson within a module or lesson set.
@@ -38,12 +40,84 @@ class Lesson(BaseModel):
     name: str
     description: Optional[str] = None
     workdir: Optional[str] = None
-    sourcedir: Optional[str] = None
+    path: Optional[str] = None
     lesson: Optional[str] = None
     exercise: Optional[str] = None
     exer_test: Optional[str] = None
     assessment: Optional[str] = None
     display: Optional[bool] = False
+    terminal: Optional[bool] = False
+    
+    def update_metadata(self, root: Path):
+        """
+        Extract metadata from the lesson file.
+
+        Returns:
+            dict: A dictionary containing the extracted metadata
+        """
+        from syllabus.util import extract_metadata
+        
+        d = {}
+        
+        if self.lesson:
+            d.update(extract_metadata(root/self.lesson))
+
+        if self.exercise:
+            d.update(extract_metadata(root/self.exercise))
+           
+          
+        for k, v in d.items():
+            if k in self.model_fields:
+                setattr(self, k, v)
+                
+        return self
+
+    
+    @classmethod
+    def new_lesson(cls,root :Path,  p: Path):
+        
+    
+        if (root/p).is_dir():
+            lesson = Lesson(name=clean_filename(p.name))
+            for f in (root/p).iterdir():
+                tless = Lesson.new_lesson(root, f.relative_to(root))
+                
+                lesson.display = lesson.display or tless.display
+                lesson.lesson = lesson.lesson or tless.lesson
+                lesson.exercise = lesson.exercise or tless.exercise
+                lesson.lesson = lesson.lesson or tless.lesson
+                lesson.description = lesson.description or tless.description
+                
+            lesson.update_metadata(root)
+                
+            
+        else:            
+            # Just a single file
+            if (root/p).suffix == '.md':  
+                d = {"name": clean_filename(p.stem), "lesson": str(p)}
+            
+            elif (root/p).suffix in ('.ipynb', '.py'):
+
+                display = any(re.search(rx, (root/p).read_text())  for rx in display_p)
+
+                d = {"name": clean_filename(p.stem), "exercise": str(p), "display": display}
+           
+            else:
+                return None
+           
+            lesson = Lesson(**d).update_metadata(root)
+            
+        
+        lesson.path = extract_rank_string(p)
+            
+        return lesson
+            
+    
+    def __str__(self):
+        return f"Lesson<{self.name}, lesson={Path(self.lesson)if self.lesson else '' }, exercise={Path(self.exercise) if self.exercise else ''}>"
+    
+    def sort(self):
+        pass
     
 class LessonSet(BaseModel):
     """
@@ -53,8 +127,15 @@ class LessonSet(BaseModel):
     cohesive unit within a module.
     """
     name: str
+    path: str
     description: Optional[str] = None
-    lessons: List[Lesson]
+    lessons: List[Lesson] = []
+    
+    def sort(self):
+        """Sort the lessons and lesson sets within the module."""
+        self.lessons.sort(key=lambda x: str(x.path))
+        for l in self.lessons:
+            l.sort()
     
     
 
@@ -67,7 +148,9 @@ class Module(BaseModel):
     forming a key component of the overall course structure.
     """
     name: str
+    path: str
     description: Optional[str] = None
+    
     overview: Optional[str] = None
     lessons: List[Lesson | LessonSet] = []
 
@@ -84,6 +167,13 @@ class Module(BaseModel):
         """
         return to_yaml(self, simplify)
     
+    
+    def sort(self):
+        """Sort the lessons and lesson sets within the module."""
+        self.lessons.sort(key=lambda x: str(x.path))
+        for l in self.lessons:
+            l.sort()
+    
 
 
 
@@ -95,7 +185,7 @@ class Course(BaseModel):
     a series of modules and course-level metadata.
     """
     name: str
-    description: str
+    description:  Optional[str] = None
     objectives: Optional[List["Objective"]] = None
     workdir: Optional[str] = None
     sourcedir: Optional[str] = None
@@ -155,6 +245,14 @@ class Course(BaseModel):
     def __str__(self):
         return f"Course<{self.name}>"
 
+    def sort(self):
+        """Recursively sort by the path strings """
+
+        self.modules.sort(key=lambda x: str(x.path))
+
+        for m in self.modules:
+            m.sort()
+            
 
 
 
