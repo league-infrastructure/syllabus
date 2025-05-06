@@ -21,11 +21,13 @@ def to_yaml(m, simplify=False):
         str: YAML string representation of the model
     """
     d = {
-        "exclude_unset": not simplify,
+        #"exclude_unset": not simplify,
         "exclude_defaults": not simplify,
         "exclude_none": not simplify,
         'by_alias': True,
     }
+
+
 
     return yaml.dump(m.model_dump(**d), sort_keys=False)
 

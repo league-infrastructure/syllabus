@@ -89,8 +89,22 @@ def compile_syllabus(lesson_dir: Path) -> None:
     
     course.sort()
     
-        
-    print(course.to_json())
+    def remove_path(obj):
+        """Remove the path from the object."""
+        if hasattr(obj, 'path'):
+            del obj.path
+        if hasattr(obj, 'lessons'):
+            for lesson in obj.lessons:
+                remove_path(lesson)
+        elif hasattr(obj, 'modules'):
+            for module in obj.modules:
+                remove_path(module)
+    
+    remove_path(course)
+    
+    
+    return course.to_yaml()
+    
 
 def regroup_lessons(lesson_dir: Path, dryrun: bool = True):
 

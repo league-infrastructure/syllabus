@@ -1,0 +1,89 @@
+name: Foobar
+description: A first course in Python
+modules:
+- name: Loops
+  path: '100'
+  description: All about Loops
+  lessons:
+  - name: Iteration
+    description: Loops and Iteration, For the Win, from the notebook metadata
+    path: 100/100
+    exercise: 100_Loops/100_Iteration.ipynb
+    terminal: true
+  - name: Crazy Tina
+    path: 100/200
+    lesson: 100_Loops/200_Crazy_Tina/README.md
+    exercise: 100_Loops/200_Crazy_Tina/Crazy_Tina.py
+    display: true
+  - name: List Story
+    path: 100/300
+    lesson: 100_Loops/300_List_Story/README.md
+    exercise: 100_Loops/300_List_Story/List_Story.py
+  - name: Strings
+    path: 100/400
+    exercise: 100_Loops/400_Strings.ipynb
+  - name: Fizz Buzz Badgers
+    path: 100/500
+    lesson: 100_Loops/500_Fizz_Buzz_Badgers/Fizz_Buzz_Badgers.md
+    exercise: 100_Loops/500_Fizz_Buzz_Badgers/Fizz_Buzz_Badgers.py
+  - name: For Loop Gauntlet
+    path: 100/600
+    exercise: 100_Loops/600_For_Loop_Gauntlet.ipynb
+- name: Turtles
+  path: '200'
+  description: All about those crafty turtles
+  lessons:
+  - name: First
+    path: 200/100
+    lessons:
+    - name: Get Started
+      path: 200/100/100
+      exercise: 200_Turtles/100_First/100_Get_Started.ipynb
+      display: true
+    - name: Meet Tina
+      description: the best of tina
+      path: 200/100/200
+      lesson: 200_Turtles/100_First/200_Meet_Tina/README.md
+      exercise: 200_Turtles/100_First/200_Meet_Tina/Meet_Tina.py
+      display: true
+  - name: Second
+    path: 200/200
+    lessons:
+    - name: Check In Your Code
+      path: 200/200/100
+      exercise: 200_Turtles/200_Second/100_Check_In_Your_Code.ipynb
+    - name: Turtle Tricks
+      path: 200/200/200
+      exercise: 200_Turtles/200_Second/200_Turtle_Tricks.py
+      display: true
+    - name: Variables and Functions
+      path: 200/200/300
+      exercise: 200_Turtles/200_Second/300_Variables_and_Functions.ipynb
+      display: true
+    - name: Variables and Functions
+      path: 200/200/400
+      exercise: 200_Turtles/200_Second/400_Variables_and_Functions.ipynb
+      display: true
+    - name: Efficient Turtle
+      path: 200/200/500
+      exercise: 200_Turtles/200_Second/500_Efficient_Turtle.py
+      display: true
+  - name: Third
+    path: 200/300
+    lessons:
+    - name: More Turtle Programs
+      path: 200/300/100
+      exercise: 200_Turtles/300_Third/100_More_Turtle_Programs.ipynb
+      display: true
+    - name: More Turtle programs
+      path: 200/300/200
+      exercise: 200_Turtles/300_Third/200_More_Turtle_programs.py
+      display: true
+    - name: More Turtle Programs
+      path: 200/300/300
+      exercise: 200_Turtles/300_Third/300_More_Turtle_Programs.py
+      display: true
+    - name: More Turtle Programs
+      path: 200/300/400
+      exercise: 200_Turtles/300_Third/400_More_Turtle_Programs.py
+      display: true
