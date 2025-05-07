@@ -15,4 +15,10 @@ test1: prep
 
 test2: prep
     @echo "Running test2"
+    syl  -e compile -ngm -i100 lessons
+
+
+test3: prep
+    @echo "Running test2"
     syl  -e compile -ng -i100 lessons
+    syl  -e -vv meta   lessons

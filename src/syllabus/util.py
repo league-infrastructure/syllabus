@@ -2,6 +2,8 @@ import re
 from pathlib import Path
 import frontmatter
 import json
+import string
+import random
 
 name_p = re.compile(r'^(\d+[A-Za-z]*)_([^\.]+)$')
 assignment_exts = ['.py', '.ipynb', '.md', '.class','.java', '.cpp', '.c', '.h']
@@ -12,6 +14,10 @@ rank_p = re.compile(r'^(\d+[A-Za-z]*)_')
 display_p = [ re.compile(r'\bturtle\b'), re.compile(r'\bzerogui\b'), re.compile(r'\bpygame\b'), 
               re.compile(r'\btkinter') ]
 
+
+def rand62(n: int) -> str:
+    chars = string.ascii_letters + string.digits
+    return ''.join(random.choices(chars, k=n))
 
 def clean_filename(filename: str) -> str:
     """Remove leading numbers and letters up to the first "_" or " "."""
@@ -44,6 +50,21 @@ def extract_metadata_notebook(p: Path) -> dict:
         metadata = notebook.get('metadata', {}).get('syllabus', {})
         return metadata
     
+    
+def insert_metadata_notebook(p: Path, metadata: dict) -> None:
+    """Insert metadata into a jupyter notebook file."""
+    with open(p, 'r', encoding='utf-8') as file:
+        notebook = json.load(file)
+        
+        if 'syllabus' not in notebook['metadata']:
+            notebook['metadata']['syllabus'] = {}
+        
+        notebook['metadata']['syllabus'] = metadata
+    
+    with open(p, 'w', encoding='utf-8') as file:
+        json.dump(notebook, file, indent=2)
+        
+        
     
 def extract_metadata(p: Path) -> dict:
     """Extract metadata from a file."""

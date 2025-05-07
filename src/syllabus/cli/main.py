@@ -9,8 +9,7 @@ from pathlib import Path
 
 import click
 
-from syllabus.models import Course
-from syllabus.sync import read_module, compile_syllabus, renumber_lessons, regroup_lessons, check_structure
+from syllabus.sync import  compile_syllabus, renumber_lessons, regroup_lessons, check_structure, metafy_lessons
 from syllabus import __version__  # Import the package version
 
 
@@ -91,10 +90,11 @@ cli.add_command(check)
 @click.argument('lesson_dir', type=click.Path(exists=True))
 @click.option('-g', '--regroup', is_flag=True, help="Regroup lessons with the same basename.")
 @click.option('-n', '--renumber', is_flag=True, help="Renumber lessons in the directory.")
+@click.option('-m', '--metafy', is_flag=True, help="Add metadata to lessons.")
 @click.option('-i', '--increment', type=int, default=1, help="Increment the lesson numbers by this amount.")
 @click.option('-f', '--file', type=str, help="Specify the syllabus file.")
 @click.pass_context
-def compile(ctx, lesson_dir, regroup, renumber, increment, file):
+def compile(ctx, lesson_dir, regroup, renumber, increment, metafy, file):
     """Read the lessons and compile a syllabus"""
     
     if regroup:
@@ -107,6 +107,12 @@ def compile(ctx, lesson_dir, regroup, renumber, increment, file):
         renumber_lessons(
             lesson_dir=Path(lesson_dir),
             increment=increment,
+            dryrun=False,
+        )
+    
+    if metafy:
+        metafy_lessons(
+            lesson_dir=Path(lesson_dir),
             dryrun=False,
         )
     
@@ -131,7 +137,6 @@ def compile(ctx, lesson_dir, regroup, renumber, increment, file):
         print(f"Course YAML written to {file}")
         
         
-    
 
 cli.add_command(compile, name='compile')
 
@@ -142,7 +147,7 @@ cli.add_command(compile, name='compile')
 @click.option('-i', '--increment', type=int, default=1, help="Increment the lesson numbers by this amount.")
 @click.pass_context
 def renumber(ctx, lesson_dir, dryrun, increment):
-    """Import a module from the specified directory."""
+    """Renumber lessons."""
     renumber_lessons(lesson_dir=Path(lesson_dir),
                      increment=increment, dryrun=dryrun)
 
@@ -155,11 +160,22 @@ cli.add_command(renumber, name='renumber')
 @click.option('-d', '--dryrun', is_flag=True, help="Perform a dry run without renaming files.")
 @click.pass_context
 def regroup(ctx, lesson_dir, dryrun):
-    """Import a module from the specified directory."""
+    """Regroup lessons with the same basename into directories"""
     regroup_lessons(lesson_dir=Path(lesson_dir), dryrun=dryrun)
 
 
 cli.add_command(regroup, name='regroup')
+
+@click.command()
+@click.argument('lesson_dir', type=click.Path(exists=True))
+@click.option('-d', '--dryrun', is_flag=True, help="Perform a dry run without modifying files.")
+@click.pass_context
+def meta(ctx, lesson_dir, dryrun):
+    """Setup metadata"""
+    metafy_lessons(lesson_dir=Path(lesson_dir), dryrun=dryrun)
+
+
+cli.add_command(meta, name='meta')
 
 
 def run():
@@ -168,3 +184,6 @@ def run():
 
 if __name__ == "__main__":
     run()
+
+
+
