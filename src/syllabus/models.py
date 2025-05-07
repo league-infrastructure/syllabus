@@ -41,7 +41,7 @@ class Lesson(BaseModel):
     """
     name: str
     description: Optional[str] = None
-    workdir: Optional[str] = None
+    module_dir: Optional[str] = None
     path: Optional[str] = None
     lesson: Optional[str] = None
     exercise: Optional[str] = None

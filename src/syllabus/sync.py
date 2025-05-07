@@ -247,6 +247,14 @@ def check_structure(lesson_dir: Path):
     # directories have a rank. 
 
     for p in lesson_dir.iterdir():
+        
+        if p.name in ('.DS_Store', '.git', 'README.md'):
+            continue
+        
+        if p.stem.startswith('.') or p.name.startswith('_'):
+            continue
+        
+        
         if p.stem.lower() == 'readme':
             continue
         if not p.is_dir() and p.name != 'README.md':

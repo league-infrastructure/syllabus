@@ -112,13 +112,20 @@ def compile(ctx, lesson_dir, regroup, renumber, increment, file):
     
     course_yaml = compile_syllabus(lesson_dir=Path(lesson_dir))
     
-    print("!!!!!", file)
+
     
-    if file:
+    if file == '-':
+        print(course_yaml)
+    elif file is None:
+        file = Path(lesson_dir)/'.jtl'/'syllabus.yaml'
+        Path(file).parent.mkdir(parents=True, exist_ok=True)
         Path(file).write_text(course_yaml)
         print(f"Course YAML written to {file}")
     else:
-        print(course_yaml)
+        Path(file).write_text(course_yaml)
+        print(f"Course YAML written to {file}")
+        
+        
     
 
 cli.add_command(compile, name='compile')
