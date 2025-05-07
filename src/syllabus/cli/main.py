@@ -110,19 +110,24 @@ def compile(ctx, lesson_dir, regroup, renumber, increment, file):
             dryrun=False,
         )
     
-    course_yaml = compile_syllabus(lesson_dir=Path(lesson_dir))
+    course = compile_syllabus(lesson_dir=Path(lesson_dir))
     
+    def rel_path(a, b):
+        return str(Path(os.path.relpath(b, start=a)))
 
     
     if file == '-':
-        print(course_yaml)
+        print(course.to_yaml)
     elif file is None:
         file = Path(lesson_dir)/'.jtl'/'syllabus.yaml'
+        
         Path(file).parent.mkdir(parents=True, exist_ok=True)
-        Path(file).write_text(course_yaml)
+        course.module_dir = rel_path(Path(file).parent,Path(lesson_dir))
+        Path(file).write_text(course.to_yaml())
         print(f"Course YAML written to {file}")
     else:
-        Path(file).write_text(course_yaml)
+        course.module_dir = rel_path(Path(file).parent,Path(lesson_dir))
+        Path(file).write_text(course.to_yaml())
         print(f"Course YAML written to {file}")
         
         

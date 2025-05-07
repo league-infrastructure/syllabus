@@ -3,10 +3,19 @@
     "configurations": [
         {
             "name": "Compile Lessons",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "module": "syllabus.cli.main",
             "args": ["-e", "-vv", "compile", "test/lessons"],
+            "justMyCode": true,
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "Compile Lessons with Incremental Numbering",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "syllabus.cli.main",
+            "args": ["-e", "compile", "-ng", "-i100", "test/lessons"],
             "justMyCode": true,
             "cwd": "${workspaceFolder}"
         }

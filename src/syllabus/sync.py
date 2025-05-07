@@ -27,18 +27,33 @@ def is_lesson(f: Path) -> bool:
 
 def get_readme_metadata(lesson_dir: Path) -> dict:
     """Get the metadata from the README.md file in the lesson directory."""
+    
     readme_path = Path(lesson_dir, 'README.md')
     if readme_path.exists():
+        
+        # Get the first level 1 heading for the name
+        heading1 = None
+        with open(readme_path, 'r', encoding='utf-8') as file:
+            for line in file:
+                if line.startswith('# '):  # Level 1 heading
+                    heading1  = line[2:].strip()                
+                    break
+        
         metadata = extract_metadata_markdown(readme_path)
+        metadata['name'] = metadata.get('name', heading1)
         return metadata
+    
     return {}
 
 def compile_syllabus(lesson_dir: Path) -> None:
     
     lesson_dir = Path(lesson_dir)
     
-    course = Course(name='Foobar')
-    course.description = get_readme_metadata(lesson_dir).get('description')
+    course = Course(name='')
+    m = get_readme_metadata(lesson_dir)
+    print("!!!", m)
+    course.description = m.get('description', course.description)
+    course.name = m.get('name', course.name)
     
     omap = {}
     last_container = None
@@ -103,7 +118,7 @@ def compile_syllabus(lesson_dir: Path) -> None:
     remove_path(course)
     
     
-    return course.to_yaml()
+    return course
     
 
 def regroup_lessons(lesson_dir: Path, dryrun: bool = True):

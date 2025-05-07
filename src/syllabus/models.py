@@ -41,7 +41,6 @@ class Lesson(BaseModel):
     """
     name: str
     description: Optional[str] = None
-    module_dir: Optional[str] = None
     path: Optional[str] = None
     lesson: Optional[str] = None
     exercise: Optional[str] = None
@@ -189,8 +188,8 @@ class Course(BaseModel):
     name: str
     description:  Optional[str] = None
     objectives: Optional[List["Objective"]] = None
-    workdir: Optional[str] = None
-    sourcedir: Optional[str] = None
+    module_dir: Optional[str] = None # Path from the syllabus dir to the prefix dir for the lesson paths
+   
     modules: List[Module] = []
 
     class Config:
