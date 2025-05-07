@@ -51,7 +51,7 @@ def compile_syllabus(lesson_dir: Path) -> None:
     
     course = Course(name='')
     m = get_readme_metadata(lesson_dir)
-    print("!!!", m)
+
     course.description = m.get('description', course.description)
     course.name = m.get('name', course.name)
     

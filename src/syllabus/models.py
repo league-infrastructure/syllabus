@@ -1,13 +1,15 @@
 
+import json
+import re
+from pathlib import Path
 from typing import List, Optional
+from uuid import uuid4
 
 import yaml
 from pydantic import BaseModel
-import json
-from pathlib import Path
-import re
 
 from syllabus.util import clean_filename, display_p, extract_rank_string
+
 
 def to_yaml(m, simplify=False):
     """
@@ -41,6 +43,7 @@ class Lesson(BaseModel):
     """
     name: str
     description: Optional[str] = None
+    uuid: Optional[str] = False
     path: Optional[str] = None
     lesson: Optional[str] = None
     exercise: Optional[str] = None
@@ -48,6 +51,12 @@ class Lesson(BaseModel):
     assessment: Optional[str] = None
     display: Optional[bool] = False
     terminal: Optional[bool] = False
+    
+    def __init__(self, **data):
+        super().__init__(**data)
+        if self.uuid is False or self.uuid is None:
+            self.uuid = str(uuid4())
+    
     
     def update_metadata(self, root: Path):
         """
@@ -57,6 +66,7 @@ class Lesson(BaseModel):
             dict: A dictionary containing the extracted metadata
         """
         from syllabus.util import extract_metadata
+
         
         d = {}
         
@@ -130,7 +140,13 @@ class LessonSet(BaseModel):
     name: str
     path: str
     description: Optional[str] = None
+    uuid: Optional[str] = False
     lessons: List[Lesson] = []
+    
+    def __init__(self, **data):
+        super().__init__(**data)
+        if self.uuid is False or self.uuid is None:
+            self.uuid = str(uuid4())
     
     def sort(self):
         """Sort the lessons and lesson sets within the module."""
@@ -153,9 +169,15 @@ class Module(BaseModel):
     description: Optional[str] = None
     
     overview: Optional[str] = None
+    uuid: Optional[str] = False
     lessons: List[Lesson | LessonSet] = []
 
-
+    def __init__(self, **data):
+        super().__init__(**data)
+        if self.uuid is False or self.uuid is None:
+            self.uuid = str(uuid4())
+            
+            
     def to_yaml(self, simplify=False):
         """
         Convert the Module to YAML format.
@@ -189,6 +211,7 @@ class Course(BaseModel):
     description:  Optional[str] = None
     objectives: Optional[List["Objective"]] = None
     module_dir: Optional[str] = None # Path from the syllabus dir to the prefix dir for the lesson paths
+    uuid: Optional[str] = False
    
     modules: List[Module] = []
 
@@ -198,6 +221,11 @@ class Course(BaseModel):
         json_encoders = {
             BaseModel: lambda v: v.dict(by_alias=True)
         }
+
+    def __init__(self, **data):
+        super().__init__(**data)
+        if self.uuid is False or self.uuid is None:
+            self.uuid = str(uuid4())
 
     @classmethod
     def from_yaml(cls, path):
