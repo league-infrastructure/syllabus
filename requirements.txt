@@ -8,8 +8,12 @@ pydantic==2.10.6
     # via jtl-syllabus (pyproject.toml)
 pydantic-core==2.27.2
     # via pydantic
-pyyaml==6.0.2
+python-frontmatter==1.1.0
     # via jtl-syllabus (pyproject.toml)
+pyyaml==6.0.2
+    # via
+    #   jtl-syllabus (pyproject.toml)
+    #   python-frontmatter
 typing-extensions==4.12.2
     # via
     #   pydantic
