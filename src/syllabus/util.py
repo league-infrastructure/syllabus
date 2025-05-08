@@ -4,17 +4,34 @@ import frontmatter
 import json
 import string
 import random
+import ast
 
 name_p = re.compile(r'^(\d+[A-Za-z]*)_([^\.]+)$')
 assignment_exts = ['.py', '.ipynb', '.md', '.class','.java', '.cpp', '.c', '.h']
 rank_p = re.compile(r'^(\d+[A-Za-z]*)_')
 
+# List of module names that indicate the file will require a display
+display_modules = ['turtle', 'guizero', 'pygame', 'tkinter']
 
-# rexeexes that indicate that the file will require a display
-display_p = [ re.compile(r'\bturtle\b'), re.compile(r'\bzerogui\b'), re.compile(r'\bpygame\b'), 
-              re.compile(r'\btkinter') ]
+def get_imports(filepath):
+    with open(filepath, "r", encoding="utf-8") as file:
+        node = ast.parse(file.read(), filename=filepath)
+    imports = set()
 
-
+    for n in ast.walk(node):
+        if isinstance(n, ast.Import):
+            for alias in n.names:
+                imports.add(alias.name.split('.')[0])
+        elif isinstance(n, ast.ImportFrom):
+            if n.module is not None:
+                imports.add(n.module.split('.')[0])
+    
+    return sorted(imports)
+                
+def needs_display(filepath):
+    
+    return len(set(get_imports(filepath)).intersection(display_modules)) > 0
+                  
 def rand62(n: int) -> str:
     chars = string.ascii_letters + string.digits
     return ''.join(random.choices(chars, k=n))

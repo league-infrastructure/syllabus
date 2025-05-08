@@ -7,7 +7,7 @@ from typing import List, Optional
 import yaml
 from pydantic import BaseModel
 
-from syllabus.util import clean_filename, display_p, extract_rank_string
+from syllabus.util import clean_filename, extract_rank_string, needs_display
 
 def to_yaml(m, simplify=False):
     """
@@ -102,7 +102,8 @@ class Lesson(BaseModel):
             
             elif (root/p).suffix in ('.ipynb', '.py'):
 
-                display = any(re.search(rx, (root/p).read_text())  for rx in display_p)
+                display = needs_display(root/p)
+
 
                 d = {"name": clean_filename(p.stem), "exercise": str(p), "display": display}
            
