@@ -1,6 +1,6 @@
 [project]
 name = "jtl-syllabus"
-version = "1.20250507.2"
+version = "1.20250530.1"
 description = "Course management system"
 readme = "README.md"
 authors = [

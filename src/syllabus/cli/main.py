@@ -35,25 +35,42 @@ class Context:
 
     verbose: bool = False
     exceptions: bool = False
+    lesson_dir: Path = None
+
 
 
 @click.group()
 @click.option('-v', '--verbose', count=True, help="Increase verbosity level.")
 @click.option('-e', '--exceptions', is_flag=True, help="Raise exceptions on errors.")
-
 @click.option('-d', '--dir', type=click.Path(), help="Set the working directory.", default=Path('.'))
+@click.option('-l', '--lesson-dir', type=click.Path(), help="Set the lesson directory.", default=None)
 @click.pass_context
-def cli(ctx, verbose, exceptions, dir):
+def cli(ctx, verbose, exceptions, dir, lesson_dir):
     setup_logging(verbose)
 
     ctx.obj = Context()
-
+    ctx.obj.verbose = verbose > 0
+    ctx.obj.exceptions = exceptions
+    
     if dir:
         if not Path(dir).exists():
             logger.error(
                 "Error: The working directory %s does not exist.", dir)
             exit(1)
         os.chdir(dir)
+    
+    # Set the lesson directory
+    if lesson_dir:
+        lesson_path = Path(lesson_dir)
+    else:
+        lesson_path = Path('lessons')  # Default to 'lessons' in current directory
+    
+    # Check if the lesson directory exists
+    if not lesson_path.exists():
+        logger.error(f"Error: The lesson directory {lesson_path} does not exist.")
+        exit(1)
+    
+    ctx.obj.lesson_dir = lesson_path
 
 
 
@@ -69,14 +86,21 @@ cli.add_command(version)
 
 
 @click.command()
-@click.argument('lesson_dir', type=click.Path(exists=True))
 @click.pass_context
-def check(ctx, lesson_dir):
+def check(ctx):
     """Validate the structure of the lesson directory."""
     
+    lesson_dir = ctx.obj.lesson_dir
+
+    # Use lesson_dir from argument if provided, otherwise use the one from context
+    target_dir = Path(lesson_dir) if lesson_dir else ctx.obj.lesson_dir
+    
+    if not target_dir.exists():
+        logger.error("Error: The lesson directory %s does not exist.", target_dir)
+        exit(1)
 
     try:
-        check_structure(Path(lesson_dir))
+        check_structure(target_dir)
     except Exception as e:
         logger.error("Error: %s", e)
         exit(1)
@@ -87,36 +111,44 @@ cli.add_command(check)
 
 
 @click.command()
-@click.argument('lesson_dir', type=click.Path(exists=True))
 @click.option('-g', '--regroup', is_flag=True, help="Regroup lessons with the same basename.")
 @click.option('-n', '--renumber', is_flag=True, help="Renumber lessons in the directory.")
 @click.option('-m', '--metafy', is_flag=True, help="Add metadata to lessons.")
 @click.option('-i', '--increment', type=int, default=1, help="Increment the lesson numbers by this amount.")
 @click.option('-f', '--file', type=str, help="Specify the syllabus file.")
 @click.pass_context
-def compile(ctx, lesson_dir, regroup, renumber, increment, metafy, file):
+def compile(ctx, regroup, renumber, increment, metafy, file):
     """Read the lessons and compile a syllabus"""
+    
+    lesson_dir = ctx.obj.lesson_dir
+
+    # Use lesson_dir from argument if provided, otherwise use the one from context
+    target_dir = Path(lesson_dir) if lesson_dir else ctx.obj.lesson_dir
+    
+    if not target_dir.exists():
+        logger.error("Error: The lesson directory %s does not exist.", target_dir)
+        exit(1)
     
     if regroup:
         regroup_lessons(
-            lesson_dir=Path(lesson_dir),
+            lesson_dir=target_dir,
             dryrun=False,
         )
     
     if renumber:
         renumber_lessons(
-            lesson_dir=Path(lesson_dir),
+            lesson_dir=target_dir,
             increment=increment,
             dryrun=False,
         )
     
     if metafy:
         metafy_lessons(
-            lesson_dir=Path(lesson_dir),
+            lesson_dir=target_dir,
             dryrun=False,
         )
     
-    course = compile_syllabus(lesson_dir=Path(lesson_dir))
+    course = compile_syllabus(lesson_dir=target_dir)
     
     def rel_path(a, b):
         return str(Path(os.path.relpath(b, start=a)))
@@ -125,14 +157,14 @@ def compile(ctx, lesson_dir, regroup, renumber, increment, metafy, file):
     if file == '-':
         print(course.to_yaml)
     elif file is None:
-        file = Path(lesson_dir)/'.jtl'/'syllabus.yaml'
+        file = target_dir/'.jtl'/'syllabus.yaml'
         
         Path(file).parent.mkdir(parents=True, exist_ok=True)
-        course.module_dir = rel_path(Path(file).parent,Path(lesson_dir))
+        course.module_dir = rel_path(Path(file).parent,target_dir)
         Path(file).write_text(course.to_yaml())
         print(f"Course YAML written to {file}")
     else:
-        course.module_dir = rel_path(Path(file).parent,Path(lesson_dir))
+        course.module_dir = rel_path(Path(file).parent,target_dir)
         Path(file).write_text(course.to_yaml())
         print(f"Course YAML written to {file}")
         
@@ -142,37 +174,63 @@ cli.add_command(compile, name='compile')
 
 
 @click.command()
-@click.argument('lesson_dir', type=click.Path(exists=True))
 @click.option('-d', '--dryrun', is_flag=True, help="Perform a dry run without renaming files.")
 @click.option('-i', '--increment', type=int, default=1, help="Increment the lesson numbers by this amount.")
 @click.pass_context
-def renumber(ctx, lesson_dir, dryrun, increment):
+def renumber(ctx, dryrun, increment):
     """Renumber lessons."""
-    renumber_lessons(lesson_dir=Path(lesson_dir),
-                     increment=increment, dryrun=dryrun)
+    
+    lesson_dir = ctx.obj.lesson_dir
+
+    # Use lesson_dir from argument if provided, otherwise use the one from context
+    target_dir = Path(lesson_dir) if lesson_dir else ctx.obj.lesson_dir
+    
+    if not target_dir.exists():
+        logger.error("Error: The lesson directory %s does not exist.", target_dir)
+        exit(1)
+        
+    renumber_lessons(lesson_dir=target_dir, increment=increment, dryrun=dryrun)
 
 
 cli.add_command(renumber, name='renumber')
 
 
 @click.command()
-@click.argument('lesson_dir', type=click.Path(exists=True))
 @click.option('-d', '--dryrun', is_flag=True, help="Perform a dry run without renaming files.")
 @click.pass_context
-def regroup(ctx, lesson_dir, dryrun):
+def regroup(ctx, dryrun):
     """Regroup lessons with the same basename into directories"""
-    regroup_lessons(lesson_dir=Path(lesson_dir), dryrun=dryrun)
+    
+    lesson_dir = ctx.obj.lesson_dir
+
+    # Use lesson_dir from argument if provided, otherwise use the one from context
+    target_dir = Path(lesson_dir) if lesson_dir else ctx.obj.lesson_dir
+    
+    if not target_dir.exists():
+        logger.error("Error: The lesson directory %s does not exist.", target_dir)
+        exit(1)
+        
+    regroup_lessons(lesson_dir=target_dir, dryrun=dryrun)
 
 
 cli.add_command(regroup, name='regroup')
 
 @click.command()
-@click.argument('lesson_dir', type=click.Path(exists=True))
 @click.option('-d', '--dryrun', is_flag=True, help="Perform a dry run without modifying files.")
 @click.pass_context
-def meta(ctx, lesson_dir, dryrun):
+def meta(ctx, dryrun):
     """Setup metadata"""
-    metafy_lessons(lesson_dir=Path(lesson_dir), dryrun=dryrun)
+    
+    lesson_dir = ctx.obj.lesson_dir
+
+    # Use lesson_dir from argument if provided, otherwise use the one from context
+    target_dir = Path(lesson_dir) if lesson_dir else ctx.obj.lesson_dir
+    
+    if not target_dir.exists():
+        logger.error("Error: The lesson directory %s does not exist.", target_dir)
+        exit(1)
+        
+    metafy_lessons(lesson_dir=target_dir, dryrun=dryrun)
 
 
 cli.add_command(meta, name='meta')
