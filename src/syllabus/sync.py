@@ -12,9 +12,7 @@ import frontmatter
 
 
 from syllabus.models import Lesson, LessonSet, Module, Course
-from syllabus.util import( clean_filename, match_rank, match_rank_name, rand62,
-                          replace_rank, extract_rank_string, extract_metadata_markdown, 
-                          extract_metadata_notebook, insert_metadata_notebook )
+from syllabus.util import * 
 
 def is_lesson(f: Path) -> bool:
     """Check if the file is a lesson. It is a lesson if it has a rank and
@@ -50,19 +48,19 @@ def what_is(p: Path) -> str:
     
     if is_lesson(p):
         if p.is_dir():
-            return 'LD'
+            return 'LD' # Lesson Directory
         else:
-            return 'LF'
+            return 'LF' # Lesson File
     elif is_lesson_set(p):
-        return 'SL'
+        return 'SL' # Set of Lessons
     elif is_module(p):
-        return 'MO'
+        return 'MO' # Module
     elif p.name == 'README.md':
-        return 'RM'
+        return 'RM' # README
     else:
-        return 'UK'
-  
-    
+        return 'UK' # Unknown
+
+
 def get_lesson_name(p: Path) -> str:
     """Get the name of the lesson from the path."""
     
@@ -76,6 +74,7 @@ def get_readme_metadata(lesson_dir: Path) -> dict:
     """Get the metadata from the README.md file in the lesson directory."""
     
     readme_path = Path(lesson_dir, 'README.md')
+   
     if readme_path.exists():
         
         # Get the first level 1 heading for the name
@@ -88,7 +87,9 @@ def get_readme_metadata(lesson_dir: Path) -> dict:
         
         metadata = extract_metadata_markdown(readme_path)
         metadata['name'] = metadata.get('name', heading1)
+       
         return metadata
+    
     
     return {}
 
@@ -265,14 +266,22 @@ def metafy_lessons(lesson_dir: Path, dryrun: bool = True):
             ensure_readme(p)
             
         if typ == 'LF':
-            if p.suffix == '.ipynb':
-                metadata = extract_metadata_notebook(p)
-               
-                if 'uid' not in metadata:
-                    metadata['uid'] = metadata.get('uid', rand62(8))                
-                    insert_metadata_notebook(p, metadata)
-                    logger.info("Add uid to notebook %s", p.relative_to(lesson_dir))
-                
+
+            metadata = extract_metadata(p)
+
+            if 'uid' not in metadata:
+                    metadata['uid'] = metadata.get('uid', rand62(8))
+            if 'name' not in metadata:                
+                metadata['name'] = clean_filename(p.stem).title()
+
+            if p.suffix == '.ipynb':           
+                insert_metadata_notebook(p, metadata)
+                logger.info("Add uid to notebook %s", p.relative_to(lesson_dir))
+            elif p.suffix == '.py':                
+                insert_metadata_python(p, metadata)
+                logger.info("Add uid to python file %s", p.relative_to(lesson_dir))
+     
+    
 
 def regroup_lessons(lesson_dir: Path, dryrun: bool = True):
 
