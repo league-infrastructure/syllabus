@@ -127,8 +127,11 @@ def compile_syllabus(lesson_dir: Path) -> None:
                 
                 module = Module(name=clean_filename(dirpath.stem), path=ranks)  
                 m = get_readme_metadata(dirpath)
-                module.description =m.get('description')
+                module.description = m.get('description')
                 module.uid = m.get('uid')
+                # Allow README frontmatter (or first H1) to override cleaned directory name
+                if m.get('name'):
+                    module.name = m['name']
                 course.modules.append(module)
                 omap[ranks] = module
                 last_container = module
@@ -141,6 +144,8 @@ def compile_syllabus(lesson_dir: Path) -> None:
                 m = get_readme_metadata(dirpath)
                 lesson_set.description = m.get('description')
                 lesson_set.uid = m.get('uid')
+                if m.get('name'):
+                    lesson_set.name = m['name']
                         
                 module = omap['/'.join(pparts[:-1])]
                 module.lessons.append(lesson_set)
