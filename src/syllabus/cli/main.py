@@ -36,6 +36,7 @@ class Context:
     verbose: bool = False
     exceptions: bool = False
     lesson_dir: Path = None
+    syllabus_file: str = None
 
 
 
@@ -44,14 +45,16 @@ class Context:
 @click.option('-e', '--exceptions', is_flag=True, help="Raise exceptions on errors.")
 @click.option('-d', '--dir', type=click.Path(), help="Set the working directory.", default=Path('.'))
 @click.option('-l', '--lesson-dir', type=click.Path(), help="Set the lesson directory.", default=None)
+@click.option('-f', '--file', type=str, help="Specify the output syllabus file.", default=None)
 @click.pass_context
-def cli(ctx, verbose, exceptions, dir, lesson_dir):
+def cli(ctx, verbose, exceptions, dir, lesson_dir, file):
     setup_logging(verbose)
 
     ctx.obj = Context()
     ctx.obj.verbose = verbose > 0
     ctx.obj.exceptions = exceptions
-    
+    ctx.obj.syllabus_file = file
+
     if dir:
         if not Path(dir).exists():
             logger.error(
@@ -115,12 +118,12 @@ cli.add_command(check)
 @click.option('-n', '--renumber', is_flag=True, help="Renumber lessons in the directory.")
 @click.option('-m', '--metafy', is_flag=True, help="Add metadata to lessons.")
 @click.option('-i', '--increment', type=int, default=1, help="Increment the lesson numbers by this amount.")
-@click.option('-f', '--file', type=str, help="Specify the syllabus file.")
 @click.pass_context
-def compile(ctx, regroup, renumber, increment, metafy, file):
+def compile(ctx, regroup, renumber, increment, metafy):
     """Read the lessons and compile a syllabus"""
-    
+
     lesson_dir = ctx.obj.lesson_dir
+    file = ctx.obj.syllabus_file
 
     # Use lesson_dir from argument if provided, otherwise use the one from context
     target_dir = Path(lesson_dir) if lesson_dir else ctx.obj.lesson_dir
