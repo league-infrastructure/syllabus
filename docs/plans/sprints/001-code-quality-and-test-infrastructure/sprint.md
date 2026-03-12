@@ -102,3 +102,5 @@ Before tickets can be created, all of the following must be true:
 - #004: Improve error messages and add pre-operation validation
 - #005: Extract display modules to constant and update pylint config
 - #006: Rewrite README with install and usage documentation
+- #007: Fix -f option in test scripts
+- #008: Replace Makefile with justfile
