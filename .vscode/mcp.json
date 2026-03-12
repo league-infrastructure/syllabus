@@ -1,0 +1,11 @@
+{
+  "servers": {
+    "clasi": {
+      "type": "stdio",
+      "command": "clasi",
+      "args": [
+        "mcp"
+      ]
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "clasi": {
+      "command": "clasi",
+      "args": [
+        "mcp"
+      ]
+    }
+  }
+}
