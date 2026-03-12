@@ -41,6 +41,7 @@ class Context:
 
 
 @click.group()
+@click.version_option(version=__version__, prog_name="syl")
 @click.option('-v', '--verbose', count=True, help="Increase verbosity level.")
 @click.option('-e', '--exceptions', is_flag=True, help="Raise exceptions on errors.")
 @click.option('-d', '--dir', type=click.Path(), help="Set the working directory.", default=Path('.'))
