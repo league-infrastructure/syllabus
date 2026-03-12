@@ -1,12 +1,12 @@
 ---
-id: "001"
-title: "Code Quality and Test Infrastructure"
-status: active
+id: '001'
+title: Code Quality and Test Infrastructure
+status: done
 branch: sprint/001-code-quality-and-test-infrastructure
 use-cases:
-  - SUC-001
-  - SUC-002
-  - SUC-003
+- SUC-001
+- SUC-002
+- SUC-003
 ---
 
 # Sprint 001: Code Quality and Test Infrastructure
