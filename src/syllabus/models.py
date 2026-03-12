@@ -265,10 +265,6 @@ class Course(BaseModel):
             m.sort()
             
 
-    def path_map():
-        ...
-
-
 
 class Objective(BaseModel):
     """
