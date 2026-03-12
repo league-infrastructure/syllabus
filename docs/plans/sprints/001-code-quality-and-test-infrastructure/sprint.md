@@ -1,7 +1,7 @@
 ---
 id: "001"
 title: "Code Quality and Test Infrastructure"
-status: planning
+status: active
 branch: sprint/001-code-quality-and-test-infrastructure
 use-cases:
   - SUC-001
@@ -96,4 +96,9 @@ Before tickets can be created, all of the following must be true:
 
 ## Tickets
 
-(To be created after sprint approval.)
+- #001: Add pytest infrastructure and golden master test suite
+- #002: Remove dead code and simplify version detection
+- #003: Add type hints to sync.py and util.py
+- #004: Improve error messages and add pre-operation validation
+- #005: Extract display modules to constant and update pylint config
+- #006: Rewrite README with install and usage documentation
