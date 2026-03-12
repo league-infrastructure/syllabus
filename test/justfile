@@ -10,14 +10,14 @@ prep:
 
 test1: prep
     @echo "Running test1 target..."
-    syl -v -f syllabus.yaml regroup -l lessons
-    syl -v -f syllabus.yaml renumber -l lessons -i 100
+    syl -v -f syllabus.yaml -l lessons regroup
+    syl -v -f syllabus.yaml -l lessons renumber -i 100
 
 test2: prep
     @echo "Running test2"
-    syl -e compile -ngm -i100 -l lessons
+    syl -e -l lessons compile -ngm -i100
 
 test3: prep
     @echo "Running test3"
-    syl -e compile -ng -i100 -l lessons
-    syl -e -vv meta -l lessons
+    syl -e -l lessons compile -ng -i100
+    syl -e -vv -l lessons meta
