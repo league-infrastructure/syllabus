@@ -10,8 +10,8 @@ name_p = re.compile(r'^(\d+[A-Za-z]*)_([^\.]+)$')
 assignment_exts = ['.py', '.ipynb', '.md', '.class','.java', '.cpp', '.c', '.h']
 rank_p = re.compile(r'^(\d+[A-Za-z]*)_')
 
-# List of module names that indicate the file will require a display
-display_modules = ['turtle', 'guizero', 'pygame', 'tkinter']
+# Module names that indicate the file will require a graphical display
+DISPLAY_MODULES = ['turtle', 'guizero', 'pygame', 'tkinter']
 
 def get_imports(filepath):
     with open(filepath, "r", encoding="utf-8") as file:
@@ -30,7 +30,7 @@ def get_imports(filepath):
                 
 def needs_display(filepath):
     
-    return len(set(get_imports(filepath)).intersection(display_modules)) > 0
+    return len(set(get_imports(filepath)).intersection(DISPLAY_MODULES)) > 0
                   
 def rand62(n: int) -> str:
     chars = string.ascii_letters + string.digits
