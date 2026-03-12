@@ -93,10 +93,12 @@ def get_readme_metadata(lesson_dir: Path) -> dict:
     
     return {}
 
-def compile_syllabus(lesson_dir: Path) -> None:
-    
+def compile_syllabus(lesson_dir: Path) -> Course:
+
     lesson_dir = Path(lesson_dir)
-    
+
+    check_structure(lesson_dir)
+
     course = Course(name='')
     m = get_readme_metadata(lesson_dir)
     course.uid = m.get('uid', rand62(8))
@@ -425,28 +427,37 @@ def check_structure(lesson_dir: Path):
     lesson_dir = Path(lesson_dir)
 
     if not lesson_dir.is_dir():
-        raise ValueError(f"{lesson_dir} is not a directory")
+        raise ValueError(
+            f"Lesson directory not found: '{lesson_dir}' is not a directory. "
+            f"Expected a directory containing ranked module subdirectories (e.g., 10_Module_Name/)."
+        )
 
-
-    # The top level of the lessons directory must contain only modules, 
+    # The top level of the lessons directory must contain only modules,
     # which means (1) There are no files except a README.md, (2) all of the
-    # directories have a rank. 
+    # directories have a rank.
 
     for p in lesson_dir.iterdir():
-        
+
         if p.name in ('.DS_Store', '.git', 'README.md'):
             continue
-        
+
         if p.stem.startswith('.') or p.name.startswith('_'):
             continue
-        
-        
+
         if p.stem.lower() == 'readme':
             continue
         if not p.is_dir() and p.name != 'README.md':
-            raise ValueError(f"{lesson_dir} contains files other than directories: {p}")
+            raise ValueError(
+                f"Unexpected file at top level: '{p.name}' in '{lesson_dir}'. "
+                f"The top-level lesson directory should contain only ranked module "
+                f"directories (e.g., 10_Module_Name/), not loose files."
+            )
         if not match_rank(p):
-            raise ValueError(f"{lesson_dir} contains directories without ranks: {p}")
+            raise ValueError(
+                f"Directory missing rank prefix: '{p.name}' in '{lesson_dir}'. "
+                f"Module directories must start with a numeric rank "
+                f"(e.g., 10_Module_Name, 20_Another_Module)."
+            )
 
     return True       
         
