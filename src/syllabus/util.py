@@ -13,10 +13,10 @@ rank_p = re.compile(r'^(\d+[A-Za-z]*)_')
 # Module names that indicate the file will require a graphical display
 DISPLAY_MODULES = ['turtle', 'guizero', 'pygame', 'tkinter']
 
-def get_imports(filepath):
+def get_imports(filepath: Path) -> list[str]:
     with open(filepath, "r", encoding="utf-8") as file:
         node = ast.parse(file.read(), filename=filepath)
-    imports = set()
+    imports: set[str] = set()
 
     for n in ast.walk(node):
         if isinstance(n, ast.Import):
@@ -25,13 +25,13 @@ def get_imports(filepath):
         elif isinstance(n, ast.ImportFrom):
             if n.module is not None:
                 imports.add(n.module.split('.')[0])
-    
+
     return sorted(imports)
-                
-def needs_display(filepath):
-    
+
+def needs_display(filepath: Path) -> bool:
+
     return len(set(get_imports(filepath)).intersection(DISPLAY_MODULES)) > 0
-                  
+
 def rand62(n: int) -> str:
     chars = string.ascii_letters + string.digits
     return ''.join(random.choices(chars, k=n))
@@ -42,7 +42,9 @@ def clean_filename(filename: str) -> str:
     return re.sub(rank_p, '', filename).replace('_', ' ').replace('-', ' ')
 
 
-def extract_metadata_python(p: Path, with_doc: bool = False):
+def extract_metadata_python(
+    p: Path, with_doc: bool = False
+) -> dict[str, str] | tuple[dict[str, str], str]:
     """Extract metadata from a Python file.
 
     Scans (1) the module docstring for lines of the form ``key: value`` and
@@ -67,9 +69,12 @@ def extract_metadata_python(p: Path, with_doc: bool = False):
     # Parse module docstring for key: value lines.
     try:
         module = ast.parse(text, filename=str(p))
-        if module.body and isinstance(module.body[0], ast.Expr) and isinstance(module.body[0].value, ast.Constant) and isinstance(module.body[0].value.value, str):
+        if (module.body
+                and isinstance(module.body[0], ast.Expr)
+                and isinstance(module.body[0].value, ast.Constant)
+                and isinstance(module.body[0].value.value, str)):
             docstring = module.body[0].value.value
-            preserved_lines = []
+            preserved_lines: list[str] = []
             for line in docstring.splitlines():
                 m = re.match(r'^(\w+):\s*(.*)$', line.strip())
                 if m:
@@ -95,35 +100,35 @@ def extract_metadata_python(p: Path, with_doc: bool = False):
 
 
 
-def extract_metadata_markdown(p: Path) -> dict:
+def extract_metadata_markdown(p: Path) -> dict[str, str]:
     """ Return the frontmatter"""
-    
+
     with open(p, 'r', encoding='utf-8') as file:
         return frontmatter.load(file).metadata
-        
-def extract_metadata_notebook(p: Path) -> dict:
+
+def extract_metadata_notebook(p: Path) -> dict[str, str]:
     """Extract metadata from a jupyter notebook file."""
     with open(p, 'r', encoding='utf-8') as file:
         notebook = json.load(file)
         metadata = notebook.get('metadata', {}).get('syllabus', {})
         return metadata
-    
-    
-def insert_metadata_notebook(p: Path, metadata: dict) -> None:
+
+
+def insert_metadata_notebook(p: Path, metadata: dict[str, str]) -> None:
     """Insert metadata into a jupyter notebook file."""
     with open(p, 'r', encoding='utf-8') as file:
         notebook = json.load(file)
-        
+
         if 'syllabus' not in notebook['metadata']:
             notebook['metadata']['syllabus'] = {}
-        
+
         notebook['metadata']['syllabus'] = metadata
-    
+
     with open(p, 'w', encoding='utf-8') as file:
         json.dump(notebook, file, indent=2)
-        
-        
-def insert_metadata_python(p: Path, metadata: dict) -> None:
+
+
+def insert_metadata_python(p: Path, metadata: dict[str, str]) -> None:
     """Insert or update metadata inside the module docstring of a Python file.
 
     Metadata is appended (or updated) as simple `key: value` lines at the END
@@ -134,7 +139,9 @@ def insert_metadata_python(p: Path, metadata: dict) -> None:
 
     # 1) Get existing metadata + cleaned docstring text (without metadata lines)
     try:
-        existing_md, cleaned_doc = extract_metadata_python(p, with_doc=True)  # type: ignore[arg-type]
+        existing_md, cleaned_doc = extract_metadata_python(
+            p, with_doc=True
+        )  # type: ignore[assignment]
     except Exception:
         existing_md, cleaned_doc = {}, ''
 
@@ -145,7 +152,7 @@ def insert_metadata_python(p: Path, metadata: dict) -> None:
         return '\n'.join(f"{k}: {v}" for k, v in md.items())
 
     # Construct new docstring body: preserved text then blank line then metadata
-    body_lines = []
+    body_lines: list[str] = []
     if cleaned_doc.strip():
         body_lines.append(cleaned_doc.strip())
         body_lines.append('')  # blank line separator
@@ -157,14 +164,17 @@ def insert_metadata_python(p: Path, metadata: dict) -> None:
     # 3) Remove the existing module docstring block from file text (if present)
     try:
         module = ast.parse(original_text, filename=str(p))
-        if module.body and isinstance(module.body[0], ast.Expr) and isinstance(module.body[0].value, ast.Constant) and isinstance(module.body[0].value.value, str):
+        if (module.body
+                and isinstance(module.body[0], ast.Expr)
+                and isinstance(module.body[0].value, ast.Constant)
+                and isinstance(module.body[0].value.value, str)):
             docnode = module.body[0]
             lines = original_text.splitlines()
             start = docnode.lineno - 1
             end = getattr(docnode, 'end_lineno', docnode.lineno) - 1
             # Remove those lines
             del lines[start:end+1]
-            remainder = '\n'.join(lines).lstrip('\n')  # trim leading blank lines after removal
+            remainder = '\n'.join(lines).lstrip('\n')
         else:
             remainder = original_text.lstrip('\n')
     except SyntaxError:
@@ -172,10 +182,10 @@ def insert_metadata_python(p: Path, metadata: dict) -> None:
 
     # 4) Write new file content with reconstructed docstring at top
     p.write_text(new_docstring_block + remainder, encoding='utf-8')
-        
-        
-    
-def extract_metadata(p: Path) -> dict:
+
+
+
+def extract_metadata(p: Path) -> dict[str, str]:
     """Extract metadata from a file."""
     if p.suffix == '.ipynb':
         return extract_metadata_notebook(p)
@@ -187,7 +197,7 @@ def extract_metadata(p: Path) -> dict:
         return {}
 
 
-def match_rank_name(f: Path) -> str:
+def match_rank_name(f: Path) -> tuple[str | None, str | None]:
 
     match = name_p.match(f.stem)
     if match:
@@ -197,7 +207,7 @@ def match_rank_name(f: Path) -> str:
         return None, None
 
 
-def match_rank(f: Path) -> str:
+def match_rank(f: Path) -> str | None:
     match = rank_p.match(f.stem)
     if match:
         rank = match.group(1)
@@ -218,5 +228,5 @@ def replace_rank(f: Path, rank: str) -> Path:
 def extract_rank_string(p: Path) -> str:
     """ Extract the rank from each components of the path and
     return a path composed of just the ranks"""
-    
+
     return str(Path(*[match_rank(Path(f)) for f in p.parts if match_rank(Path(f))]))

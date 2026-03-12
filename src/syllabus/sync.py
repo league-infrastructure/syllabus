@@ -1,6 +1,5 @@
-"""
-Does something ... 
-"""
+"""Sync operations for compiling, renumbering, regrouping, and validating
+lesson directory structures."""
 # pylint: disable=C0115  # missing-class-docstring
 
 import re
@@ -8,44 +7,47 @@ from pathlib import Path
 from collections import defaultdict
 import math
 from textwrap import dedent
+from typing import Generator
 import frontmatter
 
 
 from syllabus.models import Lesson, LessonSet, Module, Course
-from syllabus.util import * 
+from syllabus.util import *
 
 def is_lesson(f: Path) -> bool:
     """Check if the file is a lesson. It is a lesson if it has a rank and
     an extension of (.ipynb, .md, or .py), or if it is a directory with a rank
     and no file in the directory has a rank. """
-    
+
     if f.is_dir():
-        return match_rank(f) and not any(match_rank(Path(d)) for d in f.iterdir())
-    
+        return match_rank(f) and not any(
+            match_rank(Path(d)) for d in f.iterdir()
+        )
+
     if f.suffix in ('.ipynb', '.md', '.py'):
         return match_rank(f)
-    
+
     return False
 
 def is_module(d: Path) -> bool:
-    
+
     if d.is_dir():
 
         ranks = extract_rank_string(Path(d))
-        pparts =ranks.split('/')
+        pparts = ranks.split('/')
         if len(pparts) == 1:
             return True
-        
+
     return False
 
 def is_lesson_set(d: Path) -> bool:
-    
+
     return d.is_dir() and not is_module(d) and not is_lesson(d)
 
 
 def what_is(p: Path) -> str:
     """Determine if the path is a lesson, module, or lesson set."""
-    
+
     if is_lesson(p):
         if p.is_dir():
             return 'LD' # Lesson Directory
@@ -63,34 +65,34 @@ def what_is(p: Path) -> str:
 
 def get_lesson_name(p: Path) -> str:
     """Get the name of the lesson from the path."""
-    
+
     if p.is_dir():
         return clean_filename(p.stem)
     else:
         return clean_filename(p.name)
 
 
-def get_readme_metadata(lesson_dir: Path) -> dict:
+def get_readme_metadata(lesson_dir: Path) -> dict[str, str]:
     """Get the metadata from the README.md file in the lesson directory."""
-    
+
     readme_path = Path(lesson_dir, 'README.md')
-   
+
     if readme_path.exists():
-        
+
         # Get the first level 1 heading for the name
         heading1 = None
         with open(readme_path, 'r', encoding='utf-8') as file:
             for line in file:
                 if line.startswith('# '):  # Level 1 heading
-                    heading1  = line[2:].strip()                
+                    heading1 = line[2:].strip()
                     break
-        
+
         metadata = extract_metadata_markdown(readme_path)
         metadata['name'] = metadata.get('name', heading1)
-       
+
         return metadata
-    
-    
+
+
     return {}
 
 def compile_syllabus(lesson_dir: Path) -> Course:
@@ -103,70 +105,85 @@ def compile_syllabus(lesson_dir: Path) -> Course:
     m = get_readme_metadata(lesson_dir)
     course.uid = m.get('uid', rand62(8))
     course.description = m.get('description', course.description)
-    
+
     course.name = m.get('name', course.name)
-    
-    omap = {}
-    last_container = None
-     
+
+    omap: dict[str, Module | LessonSet] = {}
+    last_container: Module | LessonSet | None = None
+
     for (dirpath, dirnames, filenames) in lesson_dir.walk():
- 
+
         if not match_rank(Path(dirpath)):
             continue # No rank, so skip this directory
 
         dprtld = Path(dirpath).relative_to(lesson_dir)
-        
+
         ranks = extract_rank_string(Path(dirpath))
-        pparts =ranks.split('/')
-        
+        pparts = ranks.split('/')
+
 
         if is_lesson(Path(dirpath)):
 
-            last_container.lessons.append(Lesson.new_lesson(lesson_dir, dprtld) )
+            last_container.lessons.append(
+                Lesson.new_lesson(lesson_dir, dprtld)
+            )
         else:
             if len(pparts) == 1:
-                assert is_module(Path(dirpath)), f"Path {dirpath} is not a module"
-                
-                module = Module(name=clean_filename(dirpath.stem), path=ranks)  
+                assert is_module(Path(dirpath)), (
+                    f"Path {dirpath} is not a module"
+                )
+
+                module = Module(
+                    name=clean_filename(dirpath.stem), path=ranks
+                )
                 m = get_readme_metadata(dirpath)
                 module.description = m.get('description')
                 module.uid = m.get('uid')
-                # Allow README frontmatter (or first H1) to override cleaned directory name
+                # Allow README frontmatter (or first H1) to override
+                # cleaned directory name
                 if m.get('name'):
                     module.name = m['name']
                 course.modules.append(module)
                 omap[ranks] = module
                 last_container = module
-                
-                
+
+
             else:
-                assert is_lesson_set(Path(dirpath)), f"Path {dirpath} is not a lesson set"
-                
-                lesson_set = LessonSet(name=clean_filename(dirpath.stem), path=ranks)
+                assert is_lesson_set(Path(dirpath)), (
+                    f"Path {dirpath} is not a lesson set"
+                )
+
+                lesson_set = LessonSet(
+                    name=clean_filename(dirpath.stem), path=ranks
+                )
                 m = get_readme_metadata(dirpath)
                 lesson_set.description = m.get('description')
                 lesson_set.uid = m.get('uid')
                 if m.get('name'):
                     lesson_set.name = m['name']
-                        
+
                 module = omap['/'.join(pparts[:-1])]
                 module.lessons.append(lesson_set)
                 omap[ranks] = lesson_set
                 last_container = lesson_set
-        
-        
+
+
         for f in sorted(filenames):
             if is_lesson(Path(f)):
-                l = Lesson.new_lesson(lesson_dir, Path(dirpath, f).relative_to(lesson_dir))
+                l = Lesson.new_lesson(
+                    lesson_dir,
+                    Path(dirpath, f).relative_to(lesson_dir)
+                )
                 last_container.lessons.append(l)
-        
 
-    # Because we added the lessons that are single files independently from lessons
-    # that are directories, they won't have been added in srted order. So we need to sort them now.
-    
+
+    # Because we added the lessons that are single files independently
+    # from lessons that are directories, they won't have been added in
+    # sorted order. So we need to sort them now.
+
     course.sort()
-    
-    def remove_path(obj):
+
+    def remove_path(obj: Course | Module | LessonSet | Lesson) -> None:
         """Remove the rank path from the object."""
         if hasattr(obj, 'path'):
             del obj.path
@@ -176,67 +193,69 @@ def compile_syllabus(lesson_dir: Path) -> Course:
         elif hasattr(obj, 'modules'):
             for module in obj.modules:
                 remove_path(module)
-    
-    remove_path(course)
-    
-    
-    return course
-    
 
-def iterlessons(lesson_dir: Path):
-    
+    remove_path(course)
+
+
+    return course
+
+
+def iterlessons(
+    lesson_dir: Path,
+) -> Generator[tuple[str, Path], None, None]:
+
     """Iterate over the lessons in the lesson directory."""
-    
+
     lesson_dir = Path(lesson_dir)
-    
+
     for (dirpath, dirnames, filenames) in lesson_dir.walk():
- 
+
         if not match_rank(Path(dirpath)):
             continue # No rank, so skip this directory
-       
+
         tp = what_is(Path(dirpath))
-        
+
         yield tp, dirpath
-       
+
         if tp == 'LD':
             continue
-       
+
         for f in filenames:
             yield what_is(Path(f)), Path(dirpath, f)
-       
 
-def ensure_readme(p: Path, uid = None):
+
+def ensure_readme(p: Path, uid: str | None = None) -> None:
     """Ensure that a directory has a README.md"""
-    
+
     from syllabus.cli.main import logger
     from syllabus.util import rand62
 
     if not p.is_dir():
         return
-    
+
     readme_path = Path(p, 'README.md')
 
     uid = uid or rand62(8)
-    
+
     if not readme_path.exists():
-        
-           
+
+
         text = dedent(f"""
         ---
-        
+
         uid: {uid}
-        
+
         ---
-        
+
         # {clean_filename(p.stem)}
-    
+
         """)
-        
+
         with open(readme_path, 'w', encoding='utf-8') as file:
             file.write(text)
 
         logger.info("Create %s", readme_path.relative_to(p))
-        
+
     else:
         # Load the README.md file
         with open(readme_path, 'r', encoding='utf-8') as file:
@@ -249,192 +268,236 @@ def ensure_readme(p: Path, uid = None):
             # Save the updated README.md file
             frontmatter.dump(post, readme_path)
 
-                
-def metafy_lessons(lesson_dir: Path, dryrun: bool = True):
+
+def metafy_lessons(
+    lesson_dir: Path, dryrun: bool = True
+) -> None:
     """ Add metadata to lessons, modules and sets.
-    
+
     Creates README.md files, or ads uids to existing READMEs, and
     ads metadata to ipynb and py files"""
-    
+
     from syllabus.cli.main import logger
     from uuid import uuid4
-    
+
     logger.debug("Metafy lessons in %s", lesson_dir)
-    
+
     # The course gets a uuid4, for more randomness
     ensure_readme(lesson_dir, uid=str(uuid4()))
-    
+
     for typ, p in iterlessons(lesson_dir):
-        
-        if typ == 'UK' and p.name == '.DS_Store': # I hate these files. 
+
+        if typ == 'UK' and p.name == '.DS_Store': # I hate these files.
             p.unlink()
-        
+
         if p.is_dir():
             ensure_readme(p)
-            
+
         if typ == 'LF':
 
             metadata = extract_metadata(p)
 
             if 'uid' not in metadata:
                     metadata['uid'] = metadata.get('uid', rand62(8))
-            if 'name' not in metadata:                
+            if 'name' not in metadata:
                 metadata['name'] = clean_filename(p.stem).title()
 
-            if p.suffix == '.ipynb':           
+            if p.suffix == '.ipynb':
                 insert_metadata_notebook(p, metadata)
-                logger.info("Add uid to notebook %s", p.relative_to(lesson_dir))
-            elif p.suffix == '.py':                
+                logger.info(
+                    "Add uid to notebook %s",
+                    p.relative_to(lesson_dir)
+                )
+            elif p.suffix == '.py':
                 insert_metadata_python(p, metadata)
-                logger.info("Add uid to python file %s", p.relative_to(lesson_dir))
-     
-    
+                logger.info(
+                    "Add uid to python file %s",
+                    p.relative_to(lesson_dir)
+                )
 
-def regroup_lessons(lesson_dir: Path, dryrun: bool = True):
+
+
+def regroup_lessons(
+    lesson_dir: Path, dryrun: bool = True
+) -> None:
 
     from syllabus.cli.main import logger
-    
+
     check_structure(lesson_dir)
-    
+
     lesson_dir = Path(lesson_dir)
-    
+
     for (dirpath, dirnames, filenames) in lesson_dir.walk():
- 
+
         if not match_rank(Path(dirpath)):
             continue # No rank, so skip this directory
-        
-        grouped = defaultdict(list)
-        
+
+        grouped: dict[str, list[str]] = defaultdict(list)
+
         for f in filenames:
             rank, base = match_rank_name(Path(f))
             if rank:
                 grouped[ f"{rank}_{base}" ].append(f)
-            
+
         grouped = {k: v for k, v in grouped.items() if len(v) > 1}
-            
+
         for k, v in grouped.items():
             logger.info("Group %s -> %s", k, v)
-            
+
             # Create a new directory for the group
             new_dir = Path(dirpath, k)
-          
+
             if not dryrun:
                 new_dir.mkdir(parents=True, exist_ok=True)
-            
+
             for f in v:
                 old_path = Path(dirpath, f)
-                new_path = Path(new_dir, str(replace_rank(Path(f), '')).strip('_'))
-                
+                new_path = Path(
+                    new_dir,
+                    str(replace_rank(Path(f), '')).strip('_')
+                )
+
                 # If the new path is a .md file, move it to README.md
                 if new_path.suffix == '.md':
                     new_path = new_path.with_name('README.md')
-                
-                
-                logger.info("Move %s to %s", old_path.relative_to(lesson_dir), new_path.relative_to(lesson_dir))
-                            
+
+
+                logger.info(
+                    "Move %s to %s",
+                    old_path.relative_to(lesson_dir),
+                    new_path.relative_to(lesson_dir)
+                )
+
                 if not dryrun:
                     old_path.rename(new_path)
 
 
-def renumber_lessons(lesson_dir: Path, increment=1, dryrun: bool = True):
-    
-    
+def renumber_lessons(
+    lesson_dir: Path, increment: int = 1, dryrun: bool = True
+) -> None:
+
+
     from syllabus.cli.main import logger
     lesson_dir = Path(lesson_dir)
-    
+
     check_structure(lesson_dir)
-    
-    def compile_changes(dirpath, all_names):
-        
-        
-        changes = []
-        
+
+    def compile_changes(
+        dirpath: Path,
+        all_names: list[Path | str],
+    ) -> list[tuple[int, Path, Path]]:
+
+
+        changes: list[tuple[int, Path, Path]] = []
+
         if len(all_names) == 0:
             return changes
-        
-        
+
+
         all_names.sort()
-            
+
         max_n = max(len(all_names)*increment, 1)
-        
+
         digits = math.ceil(math.log10(max_n))
         digits = max(digits, 2)
-            
-      
+
+
         for i, n in enumerate(all_names,1):
-            
+
             i *= increment
-            
+
             new_name = replace_rank(Path(n), str(i).zfill(digits))
-            
+
             if str(n) == str(new_name):
                 continue
-            
+
             old_path = Path(dirpath, n)
             assert old_path.exists(), f"File {old_path} does not exist"
-            
+
             depth = len(old_path.relative_to(lesson_dir).parts)
-            
+
             changes.append((depth, old_path, Path(dirpath, new_name)))
-        
+
         return changes
-    
-    changes = []
-    
-    changes.extend(compile_changes(lesson_dir, [d.relative_to(lesson_dir) for d in lesson_dir.iterdir() if match_rank(Path(d))] ))
-    
-    
+
+    changes: list[tuple[int, Path, Path]] = []
+
+    changes.extend(compile_changes(
+        lesson_dir,
+        [d.relative_to(lesson_dir)
+         for d in lesson_dir.iterdir() if match_rank(Path(d))]
+    ))
+
+
     for (dirpath, dirnames, filenames) in lesson_dir.walk():
- 
+
         if not match_rank(Path(dirpath)):
             continue # No rank, so skip this directory
-        
-        all_names =  [f for f in filenames if match_rank(Path(f))] +  [d for d in dirnames if match_rank(Path(d)) ] 
-        
+
+        all_names = (
+            [f for f in filenames if match_rank(Path(f))]
+            + [d for d in dirnames if match_rank(Path(d))]
+        )
+
         changes.extend(compile_changes(dirpath, all_names))
-        
-    
+
+
     # Delete all empty directories
     for dirpath, dirnames, filenames in lesson_dir.walk():
         for dirname in dirnames:
             dir_to_check = Path(dirpath, dirname)
-            if not any(dir_to_check.iterdir()):  # Check if directory is empty
-                logger.info("Deleting empty directory: %s", dir_to_check.relative_to(lesson_dir))
+            if not any(dir_to_check.iterdir()):
+                logger.info(
+                    "Deleting empty directory: %s",
+                    dir_to_check.relative_to(lesson_dir)
+                )
                 if not dryrun:
                     dir_to_check.rmdir()
-    
-        
-    for  depth, old_name, new_name in reversed(sorted(changes, key=lambda x: x[0])):
-        logger.info("%d Rename %s to %s", depth, old_name.relative_to(lesson_dir), new_name.relative_to(lesson_dir))
+
+
+    for depth, old_name, new_name in reversed(
+        sorted(changes, key=lambda x: x[0])
+    ):
+        logger.info(
+            "%d Rename %s to %s", depth,
+            old_name.relative_to(lesson_dir),
+            new_name.relative_to(lesson_dir)
+        )
         if not dryrun:
             try:
                 old_name.rename(new_name)
             except OSError as e:
-                logger.info("Error renaming %s to %s: %s", old_name.relative_to(lesson_dir), new_name.relative_to(lesson_dir), e)
-                
-def check_structure(lesson_dir: Path):
-    """Check the structure of the lesson directory and return a list of
-    LessonEntry objects.
+                logger.info(
+                    "Error renaming %s to %s: %s",
+                    old_name.relative_to(lesson_dir),
+                    new_name.relative_to(lesson_dir), e
+                )
 
+def check_structure(lesson_dir: Path) -> bool:
+    """Check the structure of the lesson directory.
+
+    Validates that the top level contains only ranked module directories
+    and no loose files (except README.md and hidden files).
     """
-    
+
     from syllabus.cli.main import logger
 
-    
-    
+
+
     logger.debug("Checking structure of %s", lesson_dir)
-    
+
     lesson_dir = Path(lesson_dir)
 
     if not lesson_dir.is_dir():
         raise ValueError(
-            f"Lesson directory not found: '{lesson_dir}' is not a directory. "
-            f"Expected a directory containing ranked module subdirectories (e.g., 10_Module_Name/)."
+            f"Lesson directory not found: '{lesson_dir}' is not a "
+            f"directory. Expected a directory containing ranked module "
+            f"subdirectories (e.g., 10_Module_Name/)."
         )
 
     # The top level of the lessons directory must contain only modules,
-    # which means (1) There are no files except a README.md, (2) all of the
-    # directories have a rank.
+    # which means (1) There are no files except a README.md, (2) all of
+    # the directories have a rank.
 
     for p in lesson_dir.iterdir():
 
@@ -448,16 +511,17 @@ def check_structure(lesson_dir: Path):
             continue
         if not p.is_dir() and p.name != 'README.md':
             raise ValueError(
-                f"Unexpected file at top level: '{p.name}' in '{lesson_dir}'. "
-                f"The top-level lesson directory should contain only ranked module "
-                f"directories (e.g., 10_Module_Name/), not loose files."
+                f"Unexpected file at top level: '{p.name}' in "
+                f"'{lesson_dir}'. The top-level lesson directory "
+                f"should contain only ranked module directories "
+                f"(e.g., 10_Module_Name/), not loose files."
             )
         if not match_rank(p):
             raise ValueError(
-                f"Directory missing rank prefix: '{p.name}' in '{lesson_dir}'. "
-                f"Module directories must start with a numeric rank "
+                f"Directory missing rank prefix: '{p.name}' in "
+                f"'{lesson_dir}'. Module directories must start with "
+                f"a numeric rank "
                 f"(e.g., 10_Module_Name, 20_Another_Module)."
             )
 
-    return True       
-        
+    return True
