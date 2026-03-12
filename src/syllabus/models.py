@@ -132,7 +132,7 @@ class LessonSet(BaseModel):
     cohesive unit within a module.
     """
     name: str
-    path: str
+    path: Optional[str] = None
     description: Optional[str] = None
     uid: Optional[str] = False
     lessons: List[Lesson] = []
@@ -155,9 +155,9 @@ class Module(BaseModel):
     forming a key component of the overall course structure.
     """
     name: str
-    path: str
+    path: Optional[str] = None
     description: Optional[str] = None
-    
+
     overview: Optional[str] = None
     uid: Optional[str] = False
     lessons: List[Lesson | LessonSet] = []

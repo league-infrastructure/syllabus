@@ -1,5 +1,6 @@
 ---
-description: A first course in Python 
+uid: course01
+description: A first course in Python
 ---
 
 # Your First Lessons in Python 

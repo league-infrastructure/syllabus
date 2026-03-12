@@ -1,0 +1,64 @@
+name: Your First Lessons in Python
+description: A first course in Python
+uid: course01
+modules:
+- name: Yeah Loops
+  description: All about Loops
+  lessons:
+  - name: Iteration
+    description: Loops and Iteration, For the Win, from the notebook metadata
+    exercise: 10_Loops/10_Iteration.ipynb
+    terminal: true
+  - name: Crazy Tina
+    lesson: 10_Loops/20_Crazy_Tina.md
+  - name: Crazy Tina
+    exercise: 10_Loops/20_Crazy_Tina.py
+    display: true
+  - name: List Story
+    lesson: 10_Loops/40_List_Story.md
+  - name: List Story
+    exercise: 10_Loops/40_List_Story.py
+  - name: Strings
+    exercise: 10_Loops/60_Strings.ipynb
+  - name: Fizz Buzz Badgers
+    lesson: 10_Loops/70_Fizz_Buzz_Badgers/Fizz_Buzz_Badgers.md
+    exercise: 10_Loops/70_Fizz_Buzz_Badgers/Fizz_Buzz_Badgers.py
+  - name: For Loop Gauntlet
+    exercise: 10_Loops/90_For_Loop_Gauntlet.ipynb
+- name: 'Lesson 2: Turtles'
+  description: All about those crafty turtles
+  lessons:
+  - name: First
+    lessons:
+    - name: Get Started
+      exercise: 20_Turtles/01_First/010_Get_Started.ipynb
+    - name: Meet Tina
+      description: the best of tina
+      lesson: 20_Turtles/01_First/020_Meet_Tina.md
+    - name: Meet Tina
+      exercise: 20_Turtles/01_First/020_Meet_Tina.py
+      display: true
+  - name: Second
+    lessons:
+    - name: Check In Your Code
+      exercise: 20_Turtles/02_Second/040_Check_In_Your_Code.ipynb
+    - name: Turtle Tricks
+      exercise: 20_Turtles/02_Second/050_Turtle_Tricks.py
+      display: true
+    - name: Variables and Functions
+      exercise: 20_Turtles/02_Second/080_Variables_and_Functions.ipynb
+    - name: Variables and Functions
+      exercise: 20_Turtles/02_Second/090_Variables_and_Functions.ipynb
+    - name: Efficient Turtle
+      exercise: 20_Turtles/02_Second/100_Efficient_Turtle.py
+      display: true
+  - name: Third
+    lessons:
+    - name: More Turtle Programs
+      exercise: 20_Turtles/03_Third/110_More_Turtle_Programs.ipynb
+    - name: More Turtle programs
+      exercise: 20_Turtles/03_Third/120_More_Turtle_programs.py
+    - name: More Turtle Programs
+      exercise: 20_Turtles/03_Third/130_More_Turtle_Programs.py
+    - name: More Turtle Programs
+      exercise: 20_Turtles/03_Third/140_More_Turtle_Programs.py

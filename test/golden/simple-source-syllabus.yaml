@@ -1,0 +1,22 @@
+name: Simple Test Course
+description: A simple test course
+uid: simple01
+modules:
+- name: Basics
+  description: Basic lessons
+  lessons:
+  - name: Hello World
+    uid: test1234
+    exercise: 10_Basics/10_Hello.py
+  - name: Variables Introduction
+    uid: test5678
+    lesson: 10_Basics/20_Variables.md
+- name: Advanced
+  description: Advanced topics
+  lessons:
+  - name: Functions
+    uid: testfunc
+    exercise: 20_Advanced/10_Functions.py
+  - name: Classes
+    uid: testclas
+    exercise: 20_Advanced/20_Classes.py
